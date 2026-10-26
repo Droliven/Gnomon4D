@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gnomon4D: Learning Where and When to Focus for Geometric Motion-Grounded World-Action Modeling</title>
+<link rel="icon" type="image/svg+xml" href="assets/icon/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon/icon-32.png">
+<link rel="apple-touch-icon" href="assets/icon/icon-180.png">
+<link rel="stylesheet" href="assets/katex/katex.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <a class="brand" href="#top"><svg class="brand-dial" id="brandDial" aria-hidden="true"></svg><span>Gnomon<i>4D</i></span></a>
+  <nav id="nav"><a href="#video">Video</a><a href="#motivation">Motivation</a><a href="#method">Method</a><a href="#results">Results</a><a href="#gallery">Gallery</a></nav>
+</header>
+
+<!-- ============================================================ hero -->
+<section class="hero" id="top">
+  <div class="hero-text">
+    <h1>Gnomon<i>4D</i></h1>
+    <p class="title-sub">Learning Where and When to Focus for Geometric Motion-Grounded World-Action Modeling</p>
+    <p class="tldr">A world–action model that predicts the explicit 4D motion of the robot and the objects, <b>GeoDelta</b>, jointly with its actions, and uses that motion to decide <i>where</i> and <i>when</i> the action should look.</p>
+    <div class="contrib">
+      <a href="#m1"><span class="num">1</span><span><b>GeoDelta</b>explicit 4D motion as the predicted future</span></a>
+      <a href="#m2"><span class="num">2</span><span><b>InSAttn + TransAgg</b>where and when the action reads that motion</span></a>
+      <a href="#m3"><span class="num">3</span><span><b>5,000+ h human video</b>pretraining through the same motion space</span></a>
+    </div>
+    <div class="cta">
+      <a class="btn solid" href="#video">▶&nbsp; Watch the video</a>
+      <a class="btn" href="#results">Results</a>
+      <a class="btn" href="#gallery">Gallery</a>
+    </div>
+  </div>
+  <figure class="hero-dial">
+    <svg id="heroDial" role="img" aria-label="An equatorial sundial whose shadow turns with the sun"></svg>
+    <figcaption>A gnomon's shadow tells <i>where</i> the sun is and <i>when</i> it is. Move the pointer over the dial to move the sun.</figcaption>
+  </figure>
+</section>
+
+<main>
+
+<!-- ============================================================ video -->
+<section id="video" class="sec">
+  <p class="eyebrow">The video</p>
+  <h2>The whole story in <i>about six minutes.</i></h2>
+  <p class="lede">Videos stay paused until you press play. Subtitles are in the main player menu; the chapters jump to each part.</p>
+  <div class="film">
+    <video id="film" controls preload="none" playsinline poster="assets/media/film_poster.jpg" src="assets/media/Gnomon4D_supp.mp4">
+      <track kind="subtitles" srclang="en" label="English" src="assets/Gnomon4D_supp.vtt">
+    </video>
+  </div>
+  <div class="chapters" id="chapters"></div>
+</section>
+
+<!-- ============================================================ motivation -->
+<section id="motivation" class="sec">
+  <p class="eyebrow"><b>01</b> / Motivation</p>
+  <h2>World–action models imagine the future, <i>then act.</i></h2>
+  <p class="lede">From the current observation and an instruction, a world–action model (WAM) predicts future frames and the actions that produce them. Below, ours on a randomized RoboTwin 2.0 scene. The predicted future is still an incomplete control interface: it is unclear what it should encode, and where in it the action should look.</p>
+  <figure class="triple">
+    <div class="tri-head"><span>Execution</span><span class="g">Imagined video</span><span class="g">Imagined GeoDelta</span></div>
+    <video class="demo-video" controls preload="none" data-src="assets/media/demo/lift_pot.mp4" poster="assets/media/demo/lift_pot.jpg" muted loop playsinline></video>
+    <figcaption><span class="instr">“Raise the metal kitchenpot using both arms.”</span><span>Closed-loop rollout, success · predicted frames are 24 control steps ahead</span></figcaption>
+  </figure>
+
+  <div class="gap" id="gap1">
+    <div class="gap-head"><span class="gap-n">Gap 1</span><h3>What should the future <i>encode?</i></h3></div>
+    <p class="lede">RGB mixes motion with texture, lighting and background. Depth adds geometry, but one frame at a time: it shows where surfaces are, not which point went where. GeoDelta stores, for every embodiment and object pixel, where that same point moves four control steps later.</p>
+    <figure class="triple">
+      <div class="tri-head"><span>RGB</span><span>Depth</span><span class="g">GeoDelta</span></div>
+      <video class="demo-video" controls preload="none" data-src="assets/media/demo/repr.mp4" poster="assets/media/demo/repr.jpg" muted loop playsinline></video>
+      <div class="tri-foot"><span>appearance and motion entangled</span><span>no correspondence across time</span><span>(Δu, Δv, Δd) of the same point</span></div>
+    </figure>
+  </div>
+
+  <div class="gap" id="gap2">
+    <div class="gap-head"><span class="gap-n">Gap 2</span><h3>Where does the action <i>look?</i></h3></div>
+    <p class="lede">We probe released WAMs on 50 RoboTwin 2.0 event windows, one per task, with frozen weights. Their action attention spreads over the arm. The interaction region, the manipulated object plus the embodiment within 3&nbsp;cm of contact, matters most for control yet receives the least.</p>
+    <div class="probe" data-models="ref,alpha,xwam" data-id="p1"></div>
+    <div class="enrich" data-models="Fast-WAM,OpenWAM-Alpha,X-WAM"></div>
+  </div>
+</section>
+
+<!-- ============================================================ method -->
+<section id="method" class="sec">
+  <p class="eyebrow"><b>02</b> / Method</p>
+  <h2>One model, <i>three futures.</i></h2>
+  <p class="lede">Gnomon4D denoises future video, future GeoDelta and a 32-step action chunk together, through joint attention between three experts. Three pieces make the predicted motion useful for control. Hover a number to find it in the diagram; click it to read more.</p>
+
+  <figure class="pipe" id="pipe">
+    <div class="p-col p-in">
+      <div class="p-box" data-w="obs"><p class="p-tag">Observation</p><video class="demo-video" controls preload="none" id="pipeObs" data-src="assets/media/pipe/obs.mp4" poster="assets/media/pipe/obs.jpg" muted loop playsinline></video></div>
+      <div class="p-box p-instr" data-w="ins"><p class="p-tag">Instruction</p><p id="pipeInstr"></p><p class="p-plus">+ depth, foreground mask, proprioception</p></div>
+      <a class="p-box p-human" href="#m3" data-c="3" data-w="hum"><span class="num">3</span><p class="p-tag">Pretraining</p><p>5,000+ h human video, then 30+ h robot video</p></a>
+    </div>
+    <div class="p-col p-core">
+      <div class="lane" data-w="lv"><div class="lane-t"><h4>Video expert</h4><p>8 future frames</p></div><div class="tok"></div></div>
+      <a class="lane gold" href="#m1" data-c="1" data-w="lg"><span class="num">1</span><div class="lane-t"><h4>GeoDelta expert</h4><p>8 frames of (Δu, Δv, Δd)</p></div><div class="tok"></div></a>
+      <a class="readout" href="#m2" data-c="2" data-w="ro"><span class="num">2</span><span><b>InSAttn · TransAgg</b>where and when to read</span></a>
+      <div class="lane" data-w="la"><div class="lane-t"><h4>Action expert</h4><p>32-step action chunk</p></div><div class="tok"></div></div>
+      <p class="ja-lab">joint attention</p>
+    </div>
+    <div class="p-col p-out">
+      <div class="p-box" data-w="ov"><p class="p-tag">Imagined video</p><video class="sync" data-src="assets/media/pipe/vid.mp4" poster="assets/media/pipe/vid.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-c="1" data-w="og"><p class="p-tag g">Imagined GeoDelta</p><video class="sync" data-src="assets/media/pipe/gd.mp4" poster="assets/media/pipe/gd.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-w="oa"><p class="p-tag">Action chunk</p><canvas id="pipeAct" width="480" height="150"></canvas></div>
+    </div>
+    <svg class="p-wires" id="pipeWires" aria-hidden="true"></svg>
+  </figure>
+  <div class="p-keys" id="pipeKeys">
+    <a href="#m1" data-c="1"><span class="num">1</span>GeoDelta</a>
+    <a href="#m2" data-c="2"><span class="num">2</span>Where &amp; when</a>
+    <a href="#m3" data-c="3"><span class="num">3</span>Human-video pretraining</a>
+  </div>
+  <p class="note">Press play on Observation to run the synchronized streams. One closed-loop RoboTwin 2.0 rollout (Stack Blocks Two). The imagined video and GeoDelta are the model's predictions 24 control steps ahead. The action curves are the 14 joint targets of a 32-step chunk from a demonstration of the same task.</p>
+
+  <!-- 1 GeoDelta -->
+  <div class="claim" id="m1">
+    <div class="claim-text">
+      <p class="claim-n"><span class="num">1</span>GeoDelta</p>
+      <h3>Follow each point. <i>Measure its 4D motion.</i></h3>
+      <p class="prose">For every pixel on the robot and the manipulated objects, GeoDelta stores where that same physical point moves four control steps later: image-plane displacement and depth change, (Δu, Δv, Δd). It has the pixel grid of the video, so the frozen video VAE encodes it, and the GeoDelta expert predicts it next to the future frames.</p>
+      <ol class="steps" id="constructSteps">
+              <li data-t="0"><b>Foreground pixels</b><span>every pixel on the arm, the gripper and the manipulated object</span></li>
+              <li data-t="3.9"><b>Lift to 3D</b><span>back-project with depth and camera intrinsics</span></li>
+              <li data-t="6.0"><b>Find the same point four steps later</b><span>move it with the rigid motion of its link or object</span></li>
+              <li data-t="8.7"><b>Project both into the source camera</b><span>so camera motion cancels out</span></li>
+              <li data-t="11.5"><b>Take the difference</b><span>image-plane displacement and depth change</span></li>
+            </ol>
+    </div>
+    <figure class="media-card"><video id="construct" class="demo-video" controls preload="none" data-src="assets/media/demo/construct.mp4" poster="assets/media/demo/construct.jpg" muted loop playsinline></video></figure>
+  </div>
+  <div class="gd-dom" id="gdDom"></div>
+  <details class="more">
+    <summary>Definition, video codec and the denoising clock</summary>
+    <div class="eq">$$\mathbf{g}_{n+1}(u_n,v_n)=\Pi_n(\mathbf{X}_{n+1})-\Pi_n(\mathbf{X}_n)=(\Delta u,\Delta v,\Delta d)$$</div>
+    <div class="vs">
+        <p><b>vs. optical flow</b> Δd captures motion along the line of sight, which 2D flow cannot see.</p>
+        <p><b>vs. depth</b> every GeoDelta value links two moments of the same physical point.</p>
+      </div>
+    <div class="split rev">
+    <div>
+      <h3>Encoded as video, <i>through the same VAE.</i></h3>
+      <p class="prose">Each component is soft-thresholded, normalized by a fixed scale and mapped to an 8-bit channel by signed μ-law companding, so the frozen video VAE encodes GeoDelta pixel-aligned with the future video. μ&nbsp;=&nbsp;31 spends more intensity levels on small displacements, which keeps the fine motion near contact.</p>
+      <div class="eq small">$$z_c=\operatorname{clip}(g_c/\omega_c,-1,1),\qquad I_c=127.5\Big(1+\operatorname{sgn}(z_c)\frac{\log(1+\mu|z_c|)}{\log(1+\mu)}\Big)$$</div>
+    </div>
+    <div class="card mulaw">
+      <svg id="mulaw" viewBox="0 0 420 300"></svg>
+      <div class="row"><label>displacement z = <b id="muZ">0.10</b></label><input type="range" id="muIn" min="-1" max="1" step="0.01" value="0.1"><span class="swatch" id="muSw"></span><span class="mono" id="muI">—</span></div>
+    </div>
+  </div>
+
+    <div class="clock card wide" id="clock">
+    <div class="clock-head">
+      <div><h3>Actions are ready <i>before the video.</i></h3>
+      <p class="prose">GeoDelta and actions run on a denoising clock twice as fast as video. After 10 of 20 solver steps they are clean, the robot executes, and the video keeps refining only when a visual prediction is needed.</p></div>
+      <div class="eq small">$$\sigma_{\mathrm V}(u)=1-u,\qquad \sigma_{\mathrm G}(u)=\sigma_{\mathrm A}(u)=\max(1-2u,0)$$</div>
+    </div>
+    <div class="clock-panels">
+      <figure><div class="ph"><span>Video</span><span class="mono" id="sV">σ = 1.00</span></div><canvas id="cV" width="320" height="240"></canvas></figure>
+      <figure><div class="ph g"><span>GeoDelta</span><span class="mono" id="sG">σ = 1.00</span></div><canvas id="cG" width="320" height="240"></canvas></figure>
+      <figure><div class="ph g"><span>Action chunk</span><span class="mono" id="sA">σ = 1.00</span></div><canvas id="cA" width="320" height="240"></canvas></figure>
+    </div>
+    <div class="clock-ctl"><button class="icon" id="clockPlay" aria-label="play">❚❚</button><input type="range" id="clockU" min="0" max="20" step="0.05" value="0"><span class="mono" id="clockLbl">step 0 / 20</span><span class="ready" id="ready">Actions ready</span></div>
+    <p class="note">Real frames from a RoboTwin 2.0 demonstration; the noise level follows the schedule above, the noise itself is illustrative.</p>
+  </div>
+  </details>
+
+  <!-- 2 where & when -->
+  <div class="claim" id="m2">
+    <div class="claim-text">
+      <p class="claim-n"><span class="num">2</span>InSAttn + TransAgg</p>
+      <h3>Read <i>where</i> the object moves against the hand, and <i>when</i> that changes.</h3>
+      <p class="prose">Joint attention sees every future token but not which ones matter. Interaction-Salient Attention (InSAttn) compares object and embodiment motion: while the gripper approaches, the block stays still and the relative motion c is high; once grasped they move together and c drops. Transition-Anchored Aggregation (TransAgg) weights frames by how much c changes, so grasp and release dominate the readout given to the Action expert.</p>
+    </div>
+    <div class="relation card wide">
+    <div class="tri-head two"><span>RGB · active object outlined</span><span class="g">GeoDelta</span></div>
+    <video id="relVid" class="demo-video" controls preload="none" data-src="assets/media/demo/relation.mp4" poster="assets/media/demo/relation.jpg" muted loop playsinline></video>
+    <svg id="relChart" viewBox="0 0 1000 190"></svg>
+    <div class="legend"><span class="lg c"></span>relative motion c of the active object <span class="lg r"></span>transition score r = |Δc| (normalized) <span class="tagc" id="relState"></span></div>
+    <p class="note">Computed from the ground-truth GeoDelta of a RoboTwin 2.0 demonstration (Stack Blocks Two). In the model, c and r come from the predicted token motion.</p>
+  </div>
+  </div>
+  <div class="gap">
+    <div class="gap-head"><span class="gap-n gold">Result</span><h3>Attention <i>flips.</i></h3></div>
+    <p class="lede">The same probe as in Gap 2. With InSAttn and TransAgg, attention on the interaction region rises to 2.42× uniform and the rest of the arm falls below uniform, to 0.74×.</p>
+    <div class="enrich" data-models="Fast-WAM,OpenWAM-Alpha,X-WAM,Gnomon4D"></div>
+  </div>
+  <details class="more">
+    <summary>Formulas and the attention maps</summary>
+    <div class="cols2 eqcards">
+    <div class="card"><p class="tag">Where · Interaction-Salient Attention</p>
+      <div class="eq">$$c_{n,i}=\frac{\|\boldsymbol\delta_{n,i}-\bar{\boldsymbol\delta}^{\mathrm e}_{n,i}\|}{\|\boldsymbol\delta_{n,i}\|+\|\bar{\boldsymbol\delta}^{\mathrm e}_{n,i}\|+\varepsilon}$$</div>
+      <div class="eq small">$$s_{n,i}=\operatorname{softmax}_i\big(\phi(c_{n,i};\ell,\mathbf s_0)+\log(\rho^{\mathrm e}_{n,i}+\rho^{\mathrm o}_{n,i})\big)$$</div>
+      <p>c is near 1 where object and embodiment move relative to each other and near 0 where they move together. A small MLP scores each token from c given the instruction and proprioception, and the saliency s reweights each query's attention within a frame.</p></div>
+    <div class="card"><p class="tag">When · Transition-Anchored Aggregation</p>
+      <div class="eq">$$r_n=\sum_i s_{n,i}\,|\Delta c_{n,i}|$$</div>
+      <div class="eq small">$$\mathbf z_k=\sum_n\operatorname{softmax}_n\big(\mathbf q_k^{\top}\mathbf y_{k,n}+\log r_n\big)\,\mathbf y_{k,n}$$</div>
+      <p>Each of the K = 32 queries pools its per-frame readouts over time, weighted by how much c changes on salient tokens, so grasp and release frames dominate. The resulting tokens enter the Action expert through residual cross-attention.</p></div>
+  </div>
+    <div class="probe" data-models="ref,alpha,xwam,ours" data-id="p2"></div>
+  </details>
+
+  <!-- 3 human video -->
+  <div class="claim" id="m3">
+    <div class="claim-text">
+      <p class="claim-n"><span class="num">3</span>Human-video pretraining</p>
+      <h3>One motion space for <i>hands and grippers.</i></h3>
+      <p class="prose">GeoDelta describes how surfaces move, not how a body is controlled. A human hand and a robot gripper share one supervision space with no retargeting, so action-free human video can teach the world experts how an embodiment interacts with objects.</p>
+      <ol class="curri mini">
+        <li><b>5,000+ h</b><span>human video, EgoManip-5000H · Video and GeoDelta experts</span></li>
+        <li><b>30+ h</b><span>dual-arm robot video, Robot-30H · Action expert added</span></li>
+        <li><b>Post-train</b><span>one policy per benchmark</span></li>
+      </ol>
+    </div>
+    <div class="pairs card wide" id="pairs">
+    <div class="seg"><button class="on" data-k="human">Human hands · EgoManip-5000H</button><button data-k="robot">Robot arms · Robot-30H</button></div>
+    <div class="tri-head two"><span>RGB</span><span class="g">GeoDelta</span></div>
+    <video id="pairVid" controls preload="none" muted loop playsinline></video>
+    <div class="pair-thumbs" id="pairThumbs"></div>
+  </div>
+  </div>
+  <details class="more">
+    <summary>How EgoManip-5000H is built</summary>
+    <div class="cols2">
+      <div>
+        <p class="prose">EgoManip-5000H is mined from a sub-pool of a large video library in three stages. Hand-visible clips supervise both the Video and GeoDelta experts; the hand GeoDelta is rendered from fitted MANO meshes after compensating camera rotation.</p>
+        <table class="t">
+          <tr><th>Stage</th><th>Clips</th><th>Hours</th><th>Supervises</th></tr>
+          <tr><td>1 · Real-scene filtering</td><td>17.23M</td><td>37,132</td><td>–</td></tr>
+          <tr><td>2 · Ego-manipulation classifier</td><td>3.42M</td><td>7,575</td><td>–</td></tr>
+          <tr class="ours"><td>3 · Hands visible</td><td>1.45M</td><td>2,859</td><td>Video, GeoDelta</td></tr>
+          <tr><td>3 · Hands rarely visible</td><td>1.96M</td><td>4,716</td><td>Video</td></tr>
+        </table>
+      </div>
+      <figure><img loading="lazy" src="assets/fig/humanego_pipeline.jpg" alt="Curation pipeline" data-zoom></figure>
+    </div>
+    <figure class="paperfig"><img loading="lazy" src="assets/fig/humanego_diversity.jpg" alt="Diversity" data-zoom><figcaption>Training windows across scenes: frames t and t+32 and the hand GeoDelta at t+16.</figcaption></figure>
+    <figure class="paperfig"><img loading="lazy" src="assets/fig/robot_examples.jpg" alt="Robot-30H" data-zoom><figcaption>Robot-30H windows: GeoDelta of both arms and the manipulated objects; parts at rest are mid-gray.</figcaption></figure>
+  </details>
+</section>
+
+<!-- ============================================================ results -->
+<section id="results" class="sec">
+  <p class="eyebrow"><b>03</b> / Results</p>
+  <h2>First on three simulation benchmarks <i>and a real robot.</i></h2>
+  <p class="lede">The lead is largest where appearance changes or precision matters: +7.4 on VLABench unseen textures, 2.0× the success of the strongest WAM on RoboDojo, and +16.0 points under visual shifts on the real robot.</p>
+  <div class="stats">
+    <a class="stat" href="#results" data-go="rt2"><p class="n" data-count="94.33">94.33</p><p class="u">% avg. success</p><p class="l">RoboTwin 2.0 · 50 tasks</p></a>
+    <a class="stat" href="#results" data-go="vl"><p class="n" data-count="62.5">62.5</p><p class="u">% avg. over five tracks</p><p class="l">VLABench · +7.4 on unseen textures</p></a>
+    <a class="stat" href="#results" data-go="rd"><p class="n" data-count="23.86">23.86</p><p class="u">% success · 2.0× the best WAM</p><p class="l">RoboDojo · 28.24 on Precision</p></a>
+    <a class="stat" href="#results" data-go="real"><p class="n"><span data-count="82.5">82.5</span><em>/</em><span data-count="78.0">78.0</span></p><p class="u">% ID / OOD</p><p class="l">Real UR5e · +7.0 / +16.0 over the best baseline</p></a>
+  </div>
+
+  <div class="bench" data-tabs id="bench">
+    <div class="seg big"><button class="on" data-t="rt2">RoboTwin 2.0</button><button data-t="vl">VLABench</button><button data-t="rd">RoboDojo</button><button data-t="real">Real robot</button></div>
+
+    <!-- RoboTwin -->
+    <div class="pane on" data-p="rt2">
+      <div class="cols2">
+        <div>
+          <h3>50 bimanual tasks, <i>clean and randomized.</i></h3>
+          <p class="prose">One multitask policy, closed loop. Gnomon4D ranks first in both settings. It leads the strongest geometry- or flow-based WAM, MECo-WAM, by 1.71 points and the structured-readout STARRY by 0.77.</p>
+          <div class="hbars" id="rt2bars"></div>
+        </div>
+        <div>
+          <table class="t" id="rt2table">
+            <tr><th>Method</th><th>Clean</th><th>Rand.</th><th>Avg.</th></tr>
+            <tr class="grp"><td colspan="4">VLA</td></tr>
+            <tr><td>π<sub>0.5</sub></td><td>82.74</td><td>76.76</td><td>79.75</td></tr>
+            <tr><td>Galaxea G-0.5</td><td>93.72</td><td>92.84</td><td>93.28</td></tr>
+            <tr><td>Qwen-RobotManip</td><td>93.70</td><td>94.00</td><td>93.85</td></tr>
+            <tr class="grp"><td colspan="4">WAM · RGB futures</td></tr>
+            <tr><td>Motus</td><td>88.66</td><td>87.02</td><td>87.84</td></tr>
+            <tr><td>Fast-WAM</td><td>91.88</td><td>91.78</td><td>91.83</td></tr>
+            <tr><td>LingBot-VA 2.0</td><td>93.80</td><td>93.40</td><td>93.60</td></tr>
+            <tr><td>OpenWAM-Alpha</td><td>93.74</td><td>93.46</td><td>93.60</td></tr>
+            <tr class="grp"><td colspan="4">WAM · 3D geometry / flow</td></tr>
+            <tr><td>X-WAM</td><td>89.76</td><td>90.68</td><td>90.22</td></tr>
+            <tr><td>WAM4D</td><td>93.82</td><td>89.86</td><td>91.84</td></tr>
+            <tr><td>FlowWAM</td><td>92.94</td><td>92.14</td><td>92.54</td></tr>
+            <tr><td>MECo-WAM</td><td>93.26</td><td>91.98</td><td>92.62</td></tr>
+            <tr class="grp"><td colspan="4">WAM · structured readout</td></tr>
+            <tr><td>ARPS</td><td>91.32</td><td>90.10</td><td>90.71</td></tr>
+            <tr><td>STARRY</td><td>93.82</td><td>93.30</td><td>93.56</td></tr>
+            <tr class="ours"><td>Gnomon4D</td><td>94.56</td><td>94.10</td><td>94.33</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="cases" data-bench="rt2" data-groups="random:Randomized,clean:Clean" data-heads="Execution|Imagined video|Imagined GeoDelta"></div>
+      <p class="note">Episode 0 of every task in each setting, as recorded by the evaluator; ✕ marks the failed episodes shown as they are. Each rollout shows the executed head camera and the model's prediction 24 control steps ahead.</p>
+    </div>
+
+    <!-- VLABench -->
+    <div class="pane" data-p="vl">
+      <div class="cols2">
+        <div>
+          <h3>The lead grows <i>as appearance changes.</i></h3>
+          <p class="prose">VLABench tests language and commonsense across ten task families on five tracks. The margin over OpenWAM-Alpha grows from 0.6 points in distribution to 7.4 under unseen textures, because GeoDelta encodes motion, not appearance.</p>
+          <div class="vbars" id="vlbars"></div>
+        </div>
+        <div>
+          <table class="t">
+            <tr><th>Method</th><th>ID</th><th>Cat</th><th>CS</th><th>Ins</th><th>Tex</th><th>Avg.</th></tr>
+            <tr class="grp"><td colspan="7">VLA</td></tr>
+            <tr><td>π<sub>0.5</sub></td><td>65.4</td><td>38.2</td><td>43.9</td><td>48.2</td><td>44.9</td><td>48.1</td></tr>
+            <tr><td>Xiaomi-Robotics-1</td><td>75.6</td><td><b>53.0</b></td><td>48.4</td><td>55.8</td><td>62.6</td><td>59.1</td></tr>
+            <tr class="grp"><td colspan="7">WAM</td></tr>
+            <tr><td>OpenWAM-Alpha</td><td>83.4</td><td>38.1</td><td>58.0</td><td>53.8</td><td>61.4</td><td>58.9</td></tr>
+            <tr class="ours"><td>Gnomon4D</td><td>84.0</td><td>39.1</td><td>61.7</td><td>59.1</td><td>68.8</td><td>62.5</td></tr>
+          </table>
+          <p class="note">ID: in distribution · Cat: unseen categories · CS: commonsense · Ins: semantic instructions · Tex: unseen textures.</p>
+        </div>
+      </div>
+      <div class="cases" data-bench="vl" data-groups="all:All,id:In distribution,tex:Unseen texture" data-heads="Third-person view"></div>
+      <p class="note">Successful closed-loop rollouts of Gnomon4D from the official evaluator, third-person camera, played at ×1. Where a scene succeeds in both tracks, its in-distribution rollout is followed by the same scene under unseen textures.</p>
+    </div>
+
+    <!-- RoboDojo -->
+    <div class="pane" data-p="rd">
+      <div class="cols2">
+        <div>
+          <h3>Twice the success of the strongest WAM, <i>and precise.</i></h3>
+          <p class="prose">RoboDojo spans 42 bimanual tasks over five dimensions. Gnomon4D doubles the success rate of OpenWAM-Alpha (23.86% vs. 11.92%) and reaches 28.24% on Precision against at most 20.42%: these tasks need exact positions both in the image plane and in depth, which GeoDelta encodes jointly.</p>
+        </div>
+        <div>
+          <table class="t compact">
+            <tr><th>Method</th><th>Gen.</th><th>Prec.</th><th>Long</th><th>Mem.</th><th>Open</th><th>SR</th><th>Score</th></tr>
+            <tr class="grp"><td colspan="8">VLA</td></tr>
+            <tr><td>InternVLA-A1.5</td><td>6.83</td><td>10.17</td><td>13.75</td><td>3.56</td><td>1.42</td><td>7.14</td><td>11.15</td></tr>
+            <tr><td>π<sub>0.5</sub></td><td>8.17</td><td>5.50</td><td>14.67</td><td>4.67</td><td>1.67</td><td>6.93</td><td>11.44</td></tr>
+            <tr><td>Xiaomi-Robotics-1</td><td>17.00</td><td>18.83</td><td>23.67</td><td>6.56</td><td>3.58</td><td>13.93</td><td>20.07</td></tr>
+            <tr><td>Galaxea G-0.5</td><td>12.83</td><td>20.42</td><td><b>32.25</b></td><td>7.33</td><td>1.58</td><td>14.88</td><td>20.23</td></tr>
+            <tr class="grp"><td colspan="8">WAM</td></tr>
+            <tr><td>Fast-WAM</td><td>1.11</td><td>0.00</td><td>5.17</td><td>3.44</td><td>0.42</td><td>2.03</td><td>3.48</td></tr>
+            <tr><td>GigaWorld-Policy-0</td><td>2.89</td><td>1.83</td><td>8.92</td><td>2.22</td><td>0.50</td><td>3.27</td><td>6.20</td></tr>
+            <tr><td>X-WAM</td><td>3.33</td><td>1.83</td><td>9.08</td><td>4.67</td><td>0.25</td><td>3.83</td><td>7.69</td></tr>
+            <tr><td>OpenWAM-Alpha</td><td>14.83</td><td>9.25</td><td>25.33</td><td>9.11</td><td>1.08</td><td>11.92</td><td>17.18</td></tr>
+            <tr class="ours"><td>Gnomon4D</td><td>23.28</td><td>28.24</td><td>24.44</td><td>34.34</td><td>9.02</td><td>23.86</td><td>30.96</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="cases" data-bench="rd" data-groups="" data-heads="Head camera"></div>
+      <p class="note">Successful closed-loop rollouts of Gnomon4D, one per task, head camera, played at ×2.</p>
+    </div>
+
+    <!-- Real robot -->
+    <div class="pane" data-p="real">
+      <div class="cols2">
+        <div>
+          <h3>First on every task, <i>in and out of distribution.</i></h3>
+          <p class="prose">A UR5e arm with a parallel gripper, a fixed third-person RGB-D camera and a wrist camera. Five tasks, 50 demonstrations each. Every method runs 80 trials per task from shared initial configurations: 40 in distribution and 40 under unseen lighting, tablecloth, object appearance or added distractors (10 each).</p>
+          <p class="prose">The baselines trade accuracy for robustness: FlowWAM leads them in distribution but loses 14.5 points under shifts. Gnomon4D loses 4.5, and its margin over the strongest baseline widens from 7.0 to 16.0 points.</p>
+          <div class="vbars" id="realbars"></div>
+        </div>
+        <div>
+          <figure class="paperfig tight"><img loading="lazy" src="assets/fig/real_setup.jpg" alt="Real-robot setup" data-zoom></figure>
+          <table class="t compact">
+            <tr><th>Task · ID / OOD of 40</th><th>Fast-WAM</th><th>X-WAM</th><th>FlowWAM</th><th>Gnomon4D</th></tr>
+            <tr><td>Drawer Storage</td><td>32 / 26</td><td>33 / 31</td><td>34 / 32</td><td class="o">36 / 35</td></tr>
+            <tr><td>Box Packing</td><td>24 / 20</td><td>28 / 25</td><td>30 / 26</td><td class="o">33 / 31</td></tr>
+            <tr><td>Block Stacking</td><td>29 / 22</td><td>30 / 26</td><td>33 / 24</td><td class="o">35 / 31</td></tr>
+            <tr><td>Color Sorting</td><td>21 / 16</td><td>23 / 20</td><td>29 / 21</td><td class="o">32 / 30</td></tr>
+            <tr><td>Charger Insertion</td><td>11 / 10</td><td>23 / 22</td><td>25 / 19</td><td class="o">29 / 29</td></tr>
+            <tr class="sum"><td>Total of 200</td><td>117 / 94</td><td>137 / 124</td><td>151 / 122</td><td class="o">165 / 156</td></tr>
+          </table>
+          <table class="t compact">
+            <tr><th>OOD shift · of 50</th><th>Fast-WAM</th><th>X-WAM</th><th>FlowWAM</th><th>Gnomon4D</th></tr>
+            <tr><td>Lighting</td><td>24</td><td>31</td><td>31</td><td class="o">39</td></tr>
+            <tr><td>Tablecloth</td><td>29</td><td>35</td><td>38</td><td class="o">41</td></tr>
+            <tr><td>Appearance</td><td>18</td><td>27</td><td>25</td><td class="o">36</td></tr>
+            <tr><td>Distractors</td><td>23</td><td>31</td><td>28</td><td class="o">40</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="cases" data-bench="real" data-groups="all:All,id:In distribution,ood:Visual shifts" data-heads="Third-person view"></div>
+      <p class="note">Trials filmed with a phone camera, played at ×4. Labels give the visual shift of each OOD trial.</p>
+    </div>
+  </div>
+
+  <div class="sub" id="ablation">
+    <h3>Where the gains <i>come from.</i></h3>
+    <p class="prose">Ten interaction-intensive RoboTwin 2.0 tasks, every variant post-trained for 20k steps. The three groups are cumulative and match the three pieces of the method.</p>
+    <div class="trio abl">
+    <div class="card"><p class="tag"><span class="num">1</span>(a) Future representation</p><p class="jump"><span>80.0</span>→<b>83.4</b><em>+3.4</em></p><h4>Object motion matters more than re-encoding the arm.</h4><p>Embodiment-only GeoDelta adds 0.7 over RGB; object motion adds another 2.7. Full GeoDelta also beats depth by 2.5 and 2D flow by 0.9.</p></div>
+    <div class="card"><p class="tag"><span class="num">2</span>(b) Readout structure</p><p class="jump"><span>83.6</span>→<b>86.2</b><em>+2.6</em></p><h4>Guiding where and when beats adding queries.</h4><p>Generic queries only match dense readout (83.6 vs. 83.4). InSAttn adds 1.7 and TransAgg another 0.9.</p></div>
+    <div class="card"><p class="tag"><span class="num">3</span>(c) Pretraining curriculum</p><p class="jump"><span>86.2</span>→<b>91.0</b><em>+4.8</em></p><h4>Human video transfers through GeoDelta.</h4><p>EgoManip-5000H pretraining adds 2.1; Robot-30H mid-training adds another 2.7.</p></div>
+  </div>
+    <details class="more">
+    <summary>Full ablation table</summary>
+    <table class="t">
+      <tr><th>Variant</th><th>Clean</th><th>Rand.</th><th>Avg.</th></tr>
+      <tr class="grp"><td colspan="4">(a) Future representation, dense readout</td></tr>
+      <tr><td>RGB</td><td>81.0</td><td>79.0</td><td>80.0</td></tr>
+      <tr><td>RGB + Depth</td><td>81.5</td><td>80.3</td><td>80.9</td></tr>
+      <tr><td>RGB + 2D Flow</td><td>83.1</td><td>81.9</td><td>82.5</td></tr>
+      <tr><td>RGB + GeoDelta (Body)</td><td>81.5</td><td>79.8</td><td>80.7</td></tr>
+      <tr class="hl"><td>RGB + GeoDelta (Full)</td><td>83.8</td><td>82.9</td><td>83.4</td></tr>
+      <tr class="grp"><td colspan="4">(b) Readout structure</td></tr>
+      <tr><td>Generic Queries</td><td>84.2</td><td>82.9</td><td>83.6</td></tr>
+      <tr><td>InSAttn Only</td><td>85.7</td><td>84.8</td><td>85.3</td></tr>
+      <tr class="hl"><td>InSAttn + TransAgg</td><td>86.6</td><td>85.7</td><td>86.2</td></tr>
+      <tr class="grp"><td colspan="4">(c) Pretraining curriculum</td></tr>
+      <tr><td>Wan2.2-5B Init. (No Pretraining)</td><td>86.6</td><td>85.7</td><td>86.2</td></tr>
+      <tr><td>+ EgoManip-5000H</td><td>88.4</td><td>88.2</td><td>88.3</td></tr>
+      <tr class="ours"><td>+ Robot-30H (Gnomon4D)</td><td>91.3</td><td>90.6</td><td>91.0</td></tr>
+    </table>
+  </details>
+  </div>
+</section>
+
+<!-- ============================================================ gallery -->
+<section id="gallery" class="sec">
+  <p class="eyebrow"><b>04</b> / Gallery</p>
+  <h2>More rollouts, <i>as they ran.</i></h2>
+  <div class="seg" id="wallBtns"><button class="on" data-g="all">All</button><button data-g="rt2">RoboTwin 2.0</button><button data-g="vl">VLABench</button><button data-g="rd">RoboDojo</button><button data-g="real">Real robot</button></div>
+  <div class="wall" id="wall"></div>
+  <div class="wall-more"><button class="btn" id="wallMore">Show more</button></div>
+</section>
+
+</main>
+
+<footer>
+  <p class="close">A sundial reads time from the geometry of a shadow.<br><i>Gnomon4D reads where and when to act from the geometry of motion.</i></p>
+  <p class="fine">This page is self-contained: fonts, formulas and videos are bundled in this folder; no external services are required.</p>
+  <a href="#top" class="totop">Back to top ↑</a>
+</footer>
+
+<div class="lightbox" id="lightbox"><img alt=""><button aria-label="close">×</button></div>
+
+<script src="assets/katex/katex.min.js"></script>
+<script src="assets/katex/auto-render.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/sundial.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
