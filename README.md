@@ -39,7 +39,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Press `Ctrl+C` to stop the server.
 
-The site uses plain HTML, CSS, and JavaScript. No dependency installation or build step is required. Videos start when the reader presses play; the method diagram's three video streams run together when Observation is played.
+The site uses plain HTML, CSS, and JavaScript. No dependency installation or build step is required. The main overview starts when the reader presses play. Short demos play muted when visible; automatic playback releases video sources offscreen or in background tabs to cancel unnecessary downloads. Gallery downloads are queued, with up to four in progress on desktop, two on narrow screens, or one when the browser reports a slow connection. Buffered visible clips continue playing together. The method diagram's three streams remain synchronized. Readers can also pause clips manually.
 
 ## GitHub Pages deployment
 
@@ -56,9 +56,9 @@ See the [official GitHub Pages publishing guide](https://docs.github.com/en/page
 
 ### Media size and loading
 
-The main overview, `assets/media/Gnomon4D_supp.mp4`, is approximately **67.3 MiB** and **6 minutes 12.5 seconds** long. It retains 1920 × 1080 resolution at 30 fps and both audio tracks. Additional rollout examples are available in the Gallery.
+The main overview, `assets/media/Gnomon4D_supp.mp4`, is approximately **64.1 MiB** and **6 minutes 42.7 seconds** long. It retains 1920 × 1080 resolution at 30 fps and the narration-and-sound audio track. The overview includes EgoManip-5000H curation and diversity, plus the real-robot hardware setup. The repeated rollout appendix has been removed; those examples are available in the Gallery.
 
-Videos load when played. The main MP4 places its metadata at the beginning for progressive playback. Website fonts use local WOFF2 files, and attention frames are fetched by scene when the corresponding visualization enters view. JPEG previews use lossless optimization.
+The main video loads on demand; short demos load when selected for visible playback. The main MP4 places its metadata at the beginning for progressive playback. Website fonts use local WOFF2 files, and attention frames are fetched by scene when the corresponding visualization enters view. JPEG previews use lossless optimization.
 
 When replacing media, keep individual files below GitHub's **100 MiB** limit for regular Git. See [GitHub's file size limits](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
 

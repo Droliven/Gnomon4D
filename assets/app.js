@@ -9,16 +9,101 @@ const visible = new WeakMap();      // element -> currently in view
 // ---------------------------------------------------------------- formulas
 renderMathInElement(document.body, {delimiters: [{left: "$$", right: "$$", display: true}, {left: "\\(", right: "\\)", display: false}], throwOnError: false});
 
-// ---------------------------------------------------------------- videos start only when the reader presses play
+// ---------------------------------------------------------------- short videos: visible playback, bounded gallery downloads
+const autoVideos = new Map();
+const connection = navigator.connection;
+let wantedVideos = new Set(), videoFrame = 0;
+function pauseAuto(v) {
+  if (v.paused) return;
+  const state = autoVideos.get(v);
+  if (state) state.autoPause = true;
+  v.pause();
+}
+function releaseAuto(v) {
+  pauseAuto(v);
+  const state = autoVideos.get(v);
+  if (state) state.downloaded = false;
+  if (!v.getAttribute("src")) return;
+  v.removeAttribute("src"); v.load();
+}
+function updateVideos() {
+  const candidates = document.hidden ? [] : [...autoVideos.keys()].filter(v =>
+    v.isConnected && visible.get(v) && v.getClientRects().length && !autoVideos.get(v).userPaused);
+  const gallery = candidates.filter(v => v.closest("#wall"));
+  const score = v => autoVideos.get(v).ratio + (v.paused ? 0 : 0.01) + (document.activeElement === v ? 2 : 0);
+  const downloading = gallery.filter(v => !autoVideos.get(v).downloaded);
+  downloading.sort((a, b) => score(b) - score(a));
+  const slowNetwork = connection && (connection.saveData || ["slow-2g", "2g", "3g"].includes(connection.effectiveType) || (connection.downlink > 0 && connection.downlink < 3));
+  const limit = slowNetwork ? 1 : matchMedia("(max-width: 820px)").matches ? 2 : 4;
+  const pausedDownloads = [...autoVideos].filter(([v, state]) => v.closest("#wall") &&
+    state.userPaused && !state.downloaded && v.getAttribute("src") && v.networkState === 2).length;
+  wantedVideos = new Set([...candidates.filter(v => !v.closest("#wall")),
+    ...gallery.filter(v => autoVideos.get(v).downloaded), ...downloading.slice(0, Math.max(0, limit - pausedDownloads))]);
+  autoVideos.forEach((state, v) => {
+    if (!wantedVideos.has(v)) {
+      if (state.userPaused) pauseAuto(v);
+      else releaseAuto(v);
+      return;
+    }
+    if (v.dataset.src && !v.getAttribute("src")) v.src = v.dataset.src;
+    if (!v.paused || state.pending) return;
+    state.pending = true;
+    const source = v.getAttribute("src");
+    let interrupted = false;
+    v.play().catch(error => { interrupted = error.name === "AbortError"; }).finally(() => {
+      state.pending = false;
+      if (!wantedVideos.has(v)) pauseAuto(v);
+      else if (interrupted || v.getAttribute("src") !== source) queueVideos();
+    });
+  });
+}
+function queueVideos() {
+  if (videoFrame) return;
+  videoFrame = requestAnimationFrame(() => { videoFrame = 0; updateVideos(); });
+}
 const vio = new IntersectionObserver(es => es.forEach(e => {
   const v = e.target;
-  visible.set(v, e.isIntersecting);
-  if (e.isIntersecting) {
-    if (v.dataset.src && !v.getAttribute("src")) v.src = v.dataset.src;
-  } else v.pause();
-}), {rootMargin: "120px 0px", threshold: 0.2});
-const watch = v => { v.autoplay = false; v.controls = true; v.preload = "none"; v.muted = true; v.playsInline = true; vio.observe(v); };
-$$("video.demo-video, .tile video").forEach(watch);
+  const state = autoVideos.get(v);
+  if (!state) return;
+  state.ratio = e.intersectionRatio;
+  visible.set(v, e.isIntersecting && e.intersectionRatio >= 0.2);
+  queueVideos();
+}), {threshold: [0, 0.2, 0.5, 0.75, 1]});
+function watch(v, {controls = true, observe = true} = {}) {
+  if (v.id === "film" || autoVideos.has(v)) return;
+  const state = {ratio: 0, userPaused: false, autoPause: false, pending: false, downloaded: false};
+  autoVideos.set(v, state);
+  // Keep native autoplay off so offscreen videos cannot bypass the scheduler.
+  v.autoplay = false; v.controls = controls; v.preload = "none";
+  v.muted = true; v.defaultMuted = true; v.playsInline = true; v.loop = true;
+  v.addEventListener("pause", () => {
+    if (state.autoPause) state.autoPause = false;
+    else state.userPaused = true;
+    queueVideos();
+  });
+  v.addEventListener("play", () => { state.userPaused = false; queueVideos(); });
+  v.addEventListener("playing", () => { state.autoPause = false; });
+  const buffered = () => {
+    if (state.downloaded) return;
+    const ranges = v.buffered;
+    if (Number.isFinite(v.duration) && ranges.length === 1 &&
+        ranges.start(0) < 0.1 && ranges.end(ranges.length - 1) >= v.duration - 0.1) {
+      state.downloaded = true;
+      queueVideos();
+    }
+  };
+  ["progress", "suspend", "canplaythrough", "timeupdate"].forEach(event => v.addEventListener(event, buffered));
+  v.addEventListener("suspend", queueVideos);
+  v.addEventListener("focusin", queueVideos);
+  if (observe) vio.observe(v);
+}
+function unwatch(v) {
+  releaseAuto(v); autoVideos.delete(v); wantedVideos.delete(v); vio.unobserve(v);
+}
+document.addEventListener("visibilitychange", updateVideos);
+window.addEventListener("resize", queueVideos, {passive: true});
+connection?.addEventListener("change", queueVideos);
+$$("video.demo-video:not(#pipeObs), .tile video").forEach(v => watch(v));
 
 // generic tab containers
 $$("[data-tabs]").forEach(box => {
@@ -28,8 +113,9 @@ $$("[data-tabs]").forEach(box => {
     panes.forEach((p, i) => {
       const on = (p.dataset.p ?? String(i)) == key;
       p.classList.toggle("on", on);
-      if (!on) $$("video", p).forEach(v => v.pause());
+      if (!on) $$("video", p).forEach(pauseAuto);
     });
+    queueVideos();
     box.dispatchEvent(new CustomEvent("tab", {detail: key}));
   };
   btns.forEach(b => b.addEventListener("click", () => show(b.dataset.t)));
@@ -102,7 +188,17 @@ Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
   sync.forEach(v => { v.muted = true; v.playsInline = true; v.preload = "none"; });
   obs.addEventListener("play", () => sync.forEach(v => { if (!v.getAttribute("src")) v.src = v.dataset.src; v.currentTime = obs.currentTime; v.play().catch(() => {}); }));
   obs.addEventListener("pause", () => sync.forEach(v => v.pause()));
+  obs.addEventListener("emptied", () => sync.forEach(v => { if (v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); } }));
   obs.addEventListener("timeupdate", () => sync.forEach(v => { if (Math.abs(v.currentTime - obs.currentTime) > 0.15) v.currentTime = obs.currentTime; }));
+  watch(obs, {observe: false});
+  const pipeVisible = new Set();
+  // On narrow layouts the outputs are below Observation; either end starts the group.
+  const pipeIO = new IntersectionObserver(es => {
+    es.forEach(e => e.isIntersecting && e.intersectionRatio >= 0.2 ? pipeVisible.add(e.target) : pipeVisible.delete(e.target));
+    visible.set(obs, pipeVisible.size > 0);
+    queueVideos();
+  }, {threshold: [0, 0.2]});
+  [obs, ...sync].forEach(v => pipeIO.observe(v));
   // action chunk: 14 joint curves denoised from noise, then a playhead runs over the 32 steps
   const cv = $("#pipeAct"), cx = cv.getContext("2d"), q = P.clock_q, noise = q.map(r => r.map(() => Math.random()));
   let t0 = performance.now();
@@ -339,10 +435,13 @@ steps[0].classList.add("on");
     <line id="relHead" y1="${T - 6}" y2="${H - B}" stroke="#fff" stroke-width="1.6"/>
     <circle id="relDot" r="6" fill="#e8a93e" stroke="#0a0c1b" stroke-width="2"/>`;
   const head = $("#relHead"), dot = $("#relDot"), st = $("#relState");
+  let lastFrame = -1;
   (function tick() {
     requestAnimationFrame(tick);
     if (!vid.getAttribute("src")) return;
     const n = Math.min(N - 1, Math.floor(vid.currentTime * fps));
+    if (n === lastFrame) return;
+    lastFrame = n;
     head.setAttribute("x1", X(n)); head.setAttribute("x2", X(n));
     dot.setAttribute("cx", X(n)); dot.setAttribute("cy", Y(c[n]));
     const hi = c[n] > 0.5;
@@ -358,10 +457,12 @@ steps[0].classList.add("on");
   watch(vid);
   let kind = "human";
   const set = p => {
-    vid.pause();
+    pauseAuto(vid);
+    autoVideos.get(vid).userPaused = false;
     vid.poster = p.src.replace(".mp4", ".jpg");
+    releaseAuto(vid);
     vid.dataset.src = p.src;
-    if (visible.get(vid) || vid.getAttribute("src")) vid.src = p.src;
+    queueVideos();
   };
   const list = () => {
     th.innerHTML = "";
@@ -446,11 +547,14 @@ $$(".cases").forEach(box => {
   function load(i) {
     cur = (i + list.length) % list.length;
     const c = list[cur];
-    vid.pause();
+    pauseAuto(vid);
+    autoVideos.get(vid).userPaused = false;
     vid.poster = c.thumb;
-    vid.src = c.src;
+    releaseAuto(vid);
+    vid.dataset.src = c.src;
     sc.value = 0; tl.textContent = "0.0 / 0.0 s";
     playbackState();
+    queueVideos();
     $$("button", side).forEach((b, k) => b.classList.toggle("on", k === cur));
     const okm = c.ok ? `<span class="ok">✓ success</span>` : `<span class="bad">✕ failure</span>`;
     cap.innerHTML = `<span><b>${c.task}</b>${c.instr ? " · " + (c.bench === "rt2" || c.bench === "vl" ? `<span class="instr">“${c.instr}”</span>` : c.instr) : ""}${c.tag ? ` · ${c.tag}` : ""}</span><span>${okm} · ${c.speed}</span>`;
@@ -480,10 +584,11 @@ $$(".cases").forEach(box => {
   vid.addEventListener("timeupdate", () => { if (vid.duration) { sc.value = vid.currentTime / vid.duration * 1000; tl.textContent = `${vid.currentTime.toFixed(1)} / ${vid.duration.toFixed(1)} s`; } });
   sc.addEventListener("input", () => { if (vid.duration) vid.currentTime = sc.value / 1000 * vid.duration; });
   bp.addEventListener("click", () => load(cur - 1)); bn.addEventListener("click", () => load(cur + 1));
-  bpp.addEventListener("click", () => { vid.paused ? vid.play().catch(() => {}) : vid.pause(); });
-  new IntersectionObserver(es => {
-    if (!es[0].isIntersecting) vid.pause();
-  }, {threshold: 0.25}).observe(box);
+  bpp.addEventListener("click", () => {
+    autoVideos.get(vid).userPaused = !vid.paused;
+    vid.paused ? vid.play().catch(() => {}) : vid.pause();
+  });
+  watch(vid, {controls: false});
   fill(0);
 });
 
@@ -500,7 +605,7 @@ $$(".cases").forEach(box => {
   while (Object.keys(by).some(b => pos[b] < by[b].length)) pat.forEach(b => { if (pos[b] < by[b].length) items.push(by[b][pos[b]++]); });
   let g = "all", n = 16;
   function draw() {
-    $$("video", wall).forEach(v => { v.pause(); vio.unobserve(v); });
+    $$("video", wall).forEach(unwatch);
     wall.innerHTML = "";
     const list = items.filter(c => g === "all" || c.bench === g);
     list.slice(0, n).forEach(c => {
