@@ -21,11 +21,12 @@ Gnomon4D/
     ├── sundial.js             # Interactive sundial
     ├── style.css              # Layout, light and dark themes
     ├── Gnomon4D_supp.vtt       # English video subtitles
-    ├── media/                 # Main video, demo clips, and preview images
+    ├── media/                 # Main video (film/, HLS), demo clips, and preview images
     ├── fig/                   # Research figures
     ├── probe/                 # Attention visualization frames
     ├── fonts/                 # Website fonts
     ├── katex/                 # Local equation renderer and its fonts
+    ├── vendor/                # hls.js light build (Apache-2.0) for the main video
     └── icon/                  # Website icons
 ```
 
@@ -56,9 +57,9 @@ See the [official GitHub Pages publishing guide](https://docs.github.com/en/page
 
 ### Media size and loading
 
-The main overview, `assets/media/Gnomon4D_supp.mp4`, is approximately **45.4 MiB** and **5 minutes 9.1 seconds** long. It uses the light theme of the page, keeps 1920 × 1080 resolution at 30 fps, and carries the narration-and-sound audio track. More rollouts are available in the Gallery.
+The main overview is **5 minutes 9.1 seconds** long and uses the light theme of the page. It is served as HLS from `assets/media/film/` in three renditions with 4-second segments: 1920 × 1080 (about 1.15 Mbps, 43 MiB), 1280 × 720 (about 0.63 Mbps, 23 MiB) and 854 × 480 (about 0.33 Mbps, 12 MiB). Playback starts at 480p and switches rendition with the measured bandwidth and player size, so a slow connection lowers resolution instead of stalling. More rollouts are available in the Gallery.
 
-The main video loads on demand; short demos load when selected for visible playback. The main MP4 places its metadata at the beginning for progressive playback. Website fonts use local WOFF2 files, and attention frames are fetched by scene when the corresponding visualization enters view. JPEG previews use lossless optimization.
+The main video loads on demand: hls.js is fetched when the video section approaches the viewport, and segments load only after play. Safari on iOS plays the same playlist natively. Short demos load when selected for visible playback. Website fonts use local WOFF2 files, and attention frames are fetched by scene when the corresponding visualization enters view. JPEG previews use lossless optimization.
 
 When replacing media, keep individual files below GitHub's **100 MiB** limit for regular Git. See [GitHub's file size limits](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
 

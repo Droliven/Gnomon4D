@@ -303,6 +303,31 @@ Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
 
 // ---------------------------------------------------------------- film chapters
 const film = $("#film"), chap = $("#chapters");
+// Adaptive HLS (1080p / 720p / 480p): slow links drop a rendition instead of stalling.
+// hls.js is fetched when the film nears the viewport; segments load only after play.
+(() => {
+  const url = film.dataset.hls;
+  let hls = null;
+  const attach = () => {
+    if (window.MediaSource && window.Hls === undefined) {
+      const s = document.createElement("script");
+      s.src = "assets/vendor/hls.light.min.js";
+      s.onload = attach;
+      document.head.appendChild(s);
+      return;
+    }
+    if (window.Hls && Hls.isSupported()) {
+      hls = new Hls({autoStartLoad: false, startLevel: 0, capLevelToPlayerSize: true, maxBufferLength: 20});
+      hls.loadSource(url);
+      hls.attachMedia(film);
+      if (!film.paused) hls.startLoad(-1);
+      else film.addEventListener("play", () => hls.startLoad(-1), {once: true});
+    } else film.src = url;
+  };
+  new IntersectionObserver((es, io) => {
+    if (es[0].isIntersecting) { io.disconnect(); attach(); }
+  }, {rootMargin: "100% 0px"}).observe(film);
+})();
 P.chapters.forEach((c, i) => {
   const b = el("button", "", `<span>${fmt(c.t)}</span>${c.name}`);
   b.addEventListener("click", () => {
