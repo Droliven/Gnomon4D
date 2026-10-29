@@ -57,7 +57,7 @@ See the [official GitHub Pages publishing guide](https://docs.github.com/en/page
 
 ### Media size and loading
 
-The main overview is **5 minutes 47.6 seconds** long and uses the light theme of the page. It is served as HLS from `assets/media/film41/` in three renditions with 4-second segments: 1920 × 1080 (about 1.15 Mbps, 48 MiB), 1280 × 720 (about 0.63 Mbps, 26 MiB) and 854 × 480 (about 0.33 Mbps, 14 MiB). Playback starts at 480p and switches rendition with the measured bandwidth and player size, so a slow connection lowers resolution instead of stalling. More rollouts are available in the Gallery.
+The main overview is **5 minutes 51.8 seconds** long and uses the light theme of the page. It is served as HLS from `assets/media/film41b/` in three renditions with 4-second segments: 1920 × 1080 (about 1.15 Mbps, 48 MiB), 1280 × 720 (about 0.63 Mbps, 26 MiB) and 854 × 480 (about 0.33 Mbps, 14 MiB). Playback starts at 480p and switches rendition with the measured bandwidth and player size, so a slow connection lowers resolution instead of stalling. More rollouts are available in the Gallery.
 
 The main video loads on demand: hls.js is fetched when the video section approaches the viewport, and segments load only after play. Safari on iOS plays the same playlist natively. Short demos load when selected for visible playback. Website fonts use local WOFF2 files, and attention frames are fetched by scene when the corresponding visualization enters view. JPEG previews use lossless optimization.
 
