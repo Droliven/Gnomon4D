@@ -49,9 +49,11 @@
 html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 body {
   margin: 0; color: var(--ink); font: 400 17px/1.7 var(--sans); font-feature-settings: "ss01", "cv11";
-  background: var(--bg); background-image: var(--wash); background-attachment: fixed;
+  background: var(--bg);
   -webkit-font-smoothing: antialiased; transition: background-color .4s, color .4s;
 }
+/* the color wash sits on its own fixed layer, so scrolling does not repaint it */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: var(--wash); transform: translateZ(0); }
 a { color: inherit; }
 b { font-weight: 620; }
 i { font-style: italic; }
@@ -83,7 +85,7 @@ body.on-cover .topbar .brand, body.on-cover .topbar nav { opacity: 0; pointer-ev
 .topbar nav { margin: 0 auto 0 auto; }
 .theme-btn { margin-left: auto; }
 .topbar nav + .theme-btn { margin-left: 0; }
-.prog { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; background: linear-gradient(90deg, var(--gold), var(--gold2)); }
+.prog { position: absolute; left: 0; bottom: -1px; height: 2px; width: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, var(--gold), var(--gold2)); }
 
 /* ---------------------------------------------------------------- contents rail */
 .rail { display: none; }

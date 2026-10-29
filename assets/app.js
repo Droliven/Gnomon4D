@@ -50,13 +50,13 @@ function releaseAuto(v) {
   v.removeAttribute("src"); v.load();
 }
 function updateVideos() {
+  const slowNetwork = connection && (connection.saveData || ["slow-2g", "2g", "3g"].includes(connection.effectiveType) || (connection.downlink > 0 && connection.downlink < 3));
   const candidates = document.hidden ? [] : [...autoVideos.keys()].filter(v =>
     v.isConnected && visible.get(v) && v.getClientRects().length && !autoVideos.get(v).userPaused);
   const gallery = candidates.filter(v => v.closest("#wall"));
   const score = v => autoVideos.get(v).ratio + (v.paused ? 0 : 0.01) + (document.activeElement === v ? 2 : 0);
   const downloading = gallery.filter(v => !autoVideos.get(v).downloaded);
   downloading.sort((a, b) => score(b) - score(a));
-  const slowNetwork = connection && (connection.saveData || ["slow-2g", "2g", "3g"].includes(connection.effectiveType) || (connection.downlink > 0 && connection.downlink < 3));
   const limit = slowNetwork ? 1 : matchMedia("(max-width: 820px)").matches ? 2 : 4;
   const pausedDownloads = [...autoVideos].filter(([v, state]) => v.closest("#wall") &&
     state.userPaused && !state.downloaded && v.getAttribute("src") && v.networkState === 2).length;
@@ -64,8 +64,14 @@ function updateVideos() {
     ...gallery.filter(v => autoVideos.get(v).downloaded), ...downloading.slice(0, Math.max(0, limit - pausedDownloads))]);
   autoVideos.forEach((state, v) => {
     if (!wantedVideos.has(v)) {
+      const inWall = !!v.closest("#wall");
+      // within a screen of the viewport a video keeps (or gets) its source, so it resumes without a reload;
+      // gallery tiles stay under the download cap and only keep sources they have finished loading
       if (state.userPaused) pauseAuto(v);
-      else releaseAuto(v);
+      else if (state.near && !document.hidden && (inWall ? state.downloaded : !slowNetwork)) {
+        pauseAuto(v);
+        if (!inWall && v.dataset.src && !v.getAttribute("src")) { v.preload = "auto"; v.src = v.dataset.src; }
+      } else releaseAuto(v);
       return;
     }
     if (v.dataset.src && !v.getAttribute("src")) v.src = v.dataset.src;
@@ -92,6 +98,10 @@ const vio = new IntersectionObserver(es => es.forEach(e => {
   visible.set(v, e.isIntersecting && e.intersectionRatio >= 0.2);
   queueVideos();
 }), {threshold: [0, 0.2, 0.5, 0.75, 1]});
+const nio = new IntersectionObserver(es => es.forEach(e => {
+  const state = autoVideos.get(e.target);
+  if (state) { state.near = e.isIntersecting; queueVideos(); }
+}), {rootMargin: "100% 0px"});
 function watch(v, {controls = true, observe = true} = {}) {
   if (v.id === "film" || autoVideos.has(v)) return;
   const state = {ratio: 0, userPaused: false, autoPause: false, pending: false, downloaded: false};
@@ -118,10 +128,10 @@ function watch(v, {controls = true, observe = true} = {}) {
   ["progress", "suspend", "canplaythrough", "timeupdate"].forEach(event => v.addEventListener(event, buffered));
   v.addEventListener("suspend", queueVideos);
   v.addEventListener("focusin", queueVideos);
-  if (observe) vio.observe(v);
+  if (observe) { vio.observe(v); nio.observe(v); }
 }
 function unwatch(v) {
-  releaseAuto(v); autoVideos.delete(v); wantedVideos.delete(v); vio.unobserve(v);
+  releaseAuto(v); autoVideos.delete(v); wantedVideos.delete(v); vio.unobserve(v); nio.unobserve(v);
 }
 document.addEventListener("visibilitychange", updateVideos);
 window.addEventListener("resize", queueVideos, {passive: true});
@@ -140,25 +150,39 @@ $$("video.demo-video:not(#pipeObs), .tile video").forEach(v => watch(v));
     return a;
   });
   const chapterOf = m => m.closest("main > section");
-  let frame = 0;
+  const chaps = marks.map(chapterOf);
+  // layout is measured once per resize; a scroll frame only reads scrollY and writes transforms
+  let frame = 0, coverH = 0, maxY = 1, tops = [], cur = -2, onCover = null, coverK = -1;
+  function measure() {
+    coverH = cover.offsetHeight; maxY = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    const y = scrollY; tops = marks.map(m => m.getBoundingClientRect().top + y);
+  }
   function update() {
     frame = 0;
     const y = scrollY, vh = innerHeight;
-    document.body.classList.toggle("on-cover", y < cover.offsetHeight * 0.55);
-    const k = Math.min(1, y / (cover.offsetHeight * 0.7));
-    coverIn.style.opacity = (1 - k).toFixed(3);
-    coverIn.style.transform = k ? `translateY(${(-60 * k).toFixed(1)}px) scale(${(1 - 0.04 * k).toFixed(4)})` : "";
-    prog.style.width = (100 * y / Math.max(1, document.documentElement.scrollHeight - vh)).toFixed(2) + "%";
-    let cur = -1;
-    marks.forEach((m, i) => { if (m.getBoundingClientRect().top < vh * 0.38) cur = i; });
-    const chap = cur >= 0 ? chapterOf(marks[cur]) : null;
-    links.forEach((a, i) => { a.classList.toggle("on", i === cur); a.classList.toggle("in", !!chap && chapterOf(marks[i]) === chap); });
+    const oc = y < coverH * 0.55;
+    if (oc !== onCover) { onCover = oc; document.body.classList.toggle("on-cover", oc); }
+    const k = Math.min(1, y / (coverH * 0.7));
+    if (k !== coverK) {
+      coverK = k;
+      coverIn.style.opacity = (1 - k).toFixed(3);
+      coverIn.style.transform = k ? `translateY(${(-60 * k).toFixed(1)}px) scale(${(1 - 0.04 * k).toFixed(4)})` : "";
+    }
+    prog.style.transform = `scaleX(${Math.min(1, y / maxY).toFixed(4)})`;
+    let c = -1;
+    tops.forEach((t, i) => { if (t - y < vh * 0.38) c = i; });
+    if (c === cur) return;
+    cur = c;
+    const chap = cur >= 0 ? chaps[cur] : null;
+    links.forEach((a, i) => { a.classList.toggle("on", i === cur); a.classList.toggle("in", !!chap && chaps[i] === chap); });
     navLinks.forEach(a => a.classList.toggle("on", !!chap && a.getAttribute("href") === "#" + chap.id));
   }
   const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
   addEventListener("scroll", queue, {passive: true});
-  addEventListener("resize", queue, {passive: true});
-  update();
+  // fonts, formulas and media change the page height after load
+  new ResizeObserver(() => { measure(); queue(); }).observe(document.body);
+  addEventListener("resize", () => { measure(); queue(); }, {passive: true});
+  measure(); update();
 })();
 
 // reveal on scroll
