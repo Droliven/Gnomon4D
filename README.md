@@ -56,7 +56,7 @@ See the [official GitHub Pages publishing guide](https://docs.github.com/en/page
 
 ### Media size and loading
 
-The main overview, `assets/media/Gnomon4D_supp.mp4`, is approximately **64.1 MiB** and **6 minutes 42.7 seconds** long. It retains 1920 × 1080 resolution at 30 fps and the narration-and-sound audio track. The overview includes EgoManip-5000H curation and diversity, plus the real-robot hardware setup. The repeated rollout appendix has been removed; those examples are available in the Gallery.
+The main overview, `assets/media/Gnomon4D_supp.mp4`, is approximately **45.4 MiB** and **5 minutes 9.1 seconds** long. It uses the light theme of the page, keeps 1920 × 1080 resolution at 30 fps, and carries the narration-and-sound audio track. More rollouts are available in the Gallery.
 
 The main video loads on demand; short demos load when selected for visible playback. The main MP4 places its metadata at the beginning for progressive playback. Website fonts use local WOFF2 files, and attention frames are fetched by scene when the corresponding visualization enters view. JPEG previews use lossless optimization.
 

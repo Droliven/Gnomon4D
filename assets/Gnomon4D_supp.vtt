@@ -1,410 +1,289 @@
 WEBVTT
 
-00:00:06.295 --> 00:00:08.386
+00:00:06.095 --> 00:00:08.153
 A sundial turns space into time.
 
-00:00:08.939 --> 00:00:10.814
-Its gnomon casts the shadow.
+00:00:08.690 --> 00:00:11.875
+Sunlight and the geometry of its
+gnomon decide where the shadow falls,
 
-00:00:11.370 --> 00:00:13.921
-Sunlight and geometry decide
-where the shadow falls,
-
-00:00:13.961 --> 00:00:15.427
+00:00:11.915 --> 00:00:13.359
 and when it reaches each mark.
 
-00:00:15.973 --> 00:00:19.530
+00:00:13.891 --> 00:00:16.987
 Gnomon4D brings this idea to
-embodied world-action models.
+robot world-action models:
 
-00:00:20.086 --> 00:00:22.200
-Learn where, and when, to focus.
+00:00:17.027 --> 00:00:18.929
+learn where, and when, to focus.
 
-00:00:26.529 --> 00:00:28.256
+00:00:22.361 --> 00:00:24.062
 Give a robot an instruction.
 
-00:00:28.797 --> 00:00:30.882
+00:00:24.588 --> 00:00:26.713
 A world-action model imagines the future,
 
-00:00:30.922 --> 00:00:32.871
+00:00:26.753 --> 00:00:28.867
 then generates the actions
-that make it real,
+that make it real.
 
-00:00:32.911 --> 00:00:35.524
-inheriting the priors of
-large video generators.
+00:00:31.328 --> 00:00:32.806
+But two gaps remain.
 
-00:00:38.262 --> 00:00:40.364
-Existing models leave two gaps.
+00:00:33.320 --> 00:00:35.412
+First, what should the future encode?
 
-00:00:42.929 --> 00:00:43.480
-First:
+00:00:35.943 --> 00:00:38.425
+RGB mixes motion with texture and light.
 
-00:00:43.520 --> 00:00:45.145
-what should that future encode?
-
-00:00:45.686 --> 00:00:48.981
-RGB mixes motion with texture,
-light, and background.
-
-00:00:49.538 --> 00:00:52.220
+00:00:38.957 --> 00:00:41.595
 Depth adds geometry, but
 one frame at a time.
 
-00:00:52.765 --> 00:00:55.742
-It shows where surfaces are,
-not which point went where.
+00:00:42.126 --> 00:00:44.006
+Neither says which point went where.
 
-00:00:57.895 --> 00:00:58.833
-A second gap:
+00:00:46.061 --> 00:00:48.153
+Second, where does the action look?
 
-00:00:58.873 --> 00:01:00.202
-where does the action look?
+00:00:48.679 --> 00:00:51.987
+Probing released world-action models,
+we find their attention spread over the
 
-00:01:00.732 --> 00:01:04.243
-We probed released world-action
-models on fifty RoboTwin windows.
+00:00:52.027 --> 00:00:54.397
+arm, up to two point three times uniform.
 
-00:01:04.789 --> 00:01:06.709
-Their attention spreads over the arm.
+00:00:54.940 --> 00:00:57.478
+The interaction region, where
+the gripper meets the object,
 
-00:01:07.266 --> 00:01:10.391
-The rest of the arm draws up to
-two point three times uniform.
-
-00:01:10.948 --> 00:01:13.578
-The interaction region, the
-object and the fingers around it,
-
-00:01:13.618 --> 00:01:16.743
+00:00:57.518 --> 00:01:00.603
 matters most for control, yet
 gets at most one point five.
 
-00:01:20.395 --> 00:01:22.395
-Control hinges on two questions.
+00:01:03.561 --> 00:01:06.724
+Gnomon4D closes both gaps
+with three contributions.
 
-00:01:22.948 --> 00:01:24.959
-Where does the robot meet the object?
+00:01:07.239 --> 00:01:10.045
+GeoDelta, an explicit 4D motion field.
 
-00:01:25.505 --> 00:01:27.720
-And when does contact begin, or end?
-
-00:01:28.266 --> 00:01:30.164
-Gnomon4D answers both.
-
-00:01:32.229 --> 00:01:33.763
-Three contributions.
-
-00:01:34.292 --> 00:01:34.684
-One:
-
-00:01:34.724 --> 00:01:37.872
-GeoDelta, an explicit 4D
-motion representation.
-
-00:01:38.429 --> 00:01:38.843
-Two:
-
-00:01:38.883 --> 00:01:42.611
+00:01:10.587 --> 00:01:14.319
 InSAttn and TransAgg, which tell
 the action where and when to focus.
 
-00:01:43.156 --> 00:01:43.582
-Three:
+00:01:14.851 --> 00:01:17.043
+And one motion space
+for humans and robots,
 
-00:01:43.622 --> 00:01:47.059
-one motion space for humans and robots,
-so we pretrain on more than five
-
-00:01:47.099 --> 00:01:48.815
+00:01:17.083 --> 00:01:19.922
+for pretraining on five
 thousand hours of human video.
 
-00:01:51.695 --> 00:01:53.809
-Gnomon4D has three experts.
+00:01:22.761 --> 00:01:24.273
+Three experts denoise together:
 
-00:01:54.339 --> 00:01:56.844
-From the current frame, its
-depth and foreground mask,
+00:01:24.313 --> 00:01:26.806
+future video, GeoDelta, and actions.
 
-00:01:56.884 --> 00:01:59.537
-and the instruction, it jointly
-generates future video,
+00:01:27.343 --> 00:01:30.517
+GeoDelta and actions run on a
+clock twice as fast as video,
 
-00:01:59.577 --> 00:02:02.986
-a 4D motion field called GeoDelta,
-and the robot's actions.
+00:01:30.557 --> 00:01:32.470
+so the actions are ready halfway through.
 
-00:02:05.162 --> 00:02:06.492
+00:01:34.995 --> 00:01:36.305
 Contribution one.
 
-00:02:07.033 --> 00:02:08.214
+00:01:36.831 --> 00:01:37.996
 GeoDelta.
 
-00:02:10.562 --> 00:02:13.687
-GeoDelta follows every pixel
+00:01:40.028 --> 00:01:42.912
+GeoDelta follows each point
 on the arm and the object.
 
-00:02:14.239 --> 00:02:15.796
-We lift it to 3D.
+00:01:43.449 --> 00:01:45.875
+Lift it to 3D, find it four steps later,
 
-00:02:16.330 --> 00:02:18.523
-We find the same point four steps later.
+00:01:45.915 --> 00:01:47.639
+and project both into the camera.
 
-00:02:19.080 --> 00:02:21.364
-We project both into the source camera.
+00:01:48.181 --> 00:01:51.099
+The difference, delta u,
+delta v, and delta d,
 
-00:02:21.921 --> 00:02:23.222
-The difference is its motion:
+00:01:51.139 --> 00:01:52.081
+is its motion.
 
-00:02:23.262 --> 00:02:25.694
-delta u, delta v, and delta d.
+00:01:52.623 --> 00:01:55.440
+One definition holds in
+simulation, in VLABench,
 
-00:02:27.962 --> 00:02:30.701
-Optical flow misses motion
-along the line of sight.
+00:01:55.480 --> 00:01:56.757
+and on a real robot.
 
-00:02:31.230 --> 00:02:32.742
-Delta d captures it.
+00:01:58.995 --> 00:02:01.142
+A signed mu-law turns
+this motion into color,
 
-00:02:33.298 --> 00:02:35.128
-Depth stays inside one frame.
+00:02:01.182 --> 00:02:03.341
+so the frozen video
+autoencoder encodes it,
 
-00:02:35.685 --> 00:02:38.833
-Every GeoDelta value links two
-moments of the same point.
+00:02:03.381 --> 00:02:05.227
+pixel-aligned with the future video.
 
-00:02:39.389 --> 00:02:43.145
-A signed mu-law turns it into color, so
-the frozen video autoencoder can encode
-
-00:02:43.185 --> 00:02:45.901
-it, aligned pixel for pixel
-with the future video.
-
-00:02:49.162 --> 00:02:52.253
-All three experts denoise
-together, through joint attention.
-
-00:02:52.805 --> 00:02:56.169
-GeoDelta and actions run on a
-clock twice as fast as video.
-
-00:02:56.714 --> 00:02:58.817
-Halfway through, the actions are ready.
-
-00:02:59.373 --> 00:03:01.964
-The robot moves while the
-video keeps refining.
-
-00:03:04.329 --> 00:03:05.704
+00:02:07.961 --> 00:02:09.316
 Contribution two.
 
-00:03:06.245 --> 00:03:08.051
-InSAttn and TransAgg.
-
-00:03:08.608 --> 00:03:10.517
+00:02:09.842 --> 00:02:11.722
 Where, and when, to focus.
 
-00:03:12.862 --> 00:03:14.958
-Joint attention sees every future token,
+00:02:13.761 --> 00:02:15.139
+We compare motions.
 
-00:03:14.998 --> 00:03:16.464
-but not which ones matter.
-
-00:03:17.017 --> 00:03:18.517
-So we compare motions.
-
-00:03:19.051 --> 00:03:21.710
+00:02:15.653 --> 00:02:18.269
 As the gripper approaches,
 the block stays still.
 
-00:03:22.255 --> 00:03:25.528
+00:02:18.801 --> 00:02:22.019
 Their motions differ, so the
 relative-motion field c is high.
 
-00:03:26.073 --> 00:03:29.210
+00:02:22.551 --> 00:02:25.635
 Once grasped, they move
 together, and c drops to zero.
 
-00:03:29.755 --> 00:03:33.562
-Interaction-Salient Attention,
-InSAttn, reads where c is high.
+00:02:26.167 --> 00:02:29.899
+InSAttn, Interaction-Salient
+Attention, reads where c is high.
 
-00:03:35.995 --> 00:03:37.211
-Now, time.
+00:02:32.128 --> 00:02:33.304
+Then, time.
 
-00:03:37.764 --> 00:03:39.423
+00:02:33.830 --> 00:02:35.464
 A grasp switches c off.
 
-00:03:39.980 --> 00:03:41.695
+00:02:36.007 --> 00:02:37.696
 A release switches it back on.
 
-00:03:42.241 --> 00:03:44.474
-Transition-Anchored Aggregation, TransAgg,
+00:02:38.228 --> 00:02:40.487
+TransAgg, Transition-Anchored Aggregation,
 
-00:03:44.514 --> 00:03:47.780
-weights each frame by this change, so
-the action reads the moments that decide
+00:02:40.527 --> 00:02:42.361
+anchors the readout on these moments.
 
-00:03:47.820 --> 00:03:48.593
-the task.
+00:02:44.795 --> 00:02:46.016
+Attention flips.
 
-00:03:51.029 --> 00:03:51.784
-The result:
-
-00:03:51.824 --> 00:03:52.961
-attention flips.
-
-00:03:53.501 --> 00:03:56.740
+00:02:46.530 --> 00:02:49.716
 The interaction region rises to
 two point four times uniform.
 
-00:03:57.297 --> 00:03:59.706
+00:02:50.258 --> 00:02:52.629
 The rest of the arm falls below uniform.
 
-00:04:02.462 --> 00:04:03.883
+00:02:55.361 --> 00:02:56.761
 Contribution three.
 
-00:04:04.423 --> 00:04:07.037
+00:02:57.287 --> 00:02:59.858
 One motion space, for humans and robots.
 
-00:04:09.262 --> 00:04:13.171
+00:03:01.895 --> 00:03:05.738
 GeoDelta describes how surfaces
 move, not how a body is controlled.
 
-00:04:13.723 --> 00:04:16.740
-So a human hand and a robot
-gripper share one motion space,
+00:03:06.275 --> 00:03:09.104
+So human hands and robot
+grippers share one motion space,
 
-00:04:16.780 --> 00:04:17.973
-with no retargeting.
+00:03:09.144 --> 00:03:10.264
+without retargeting.
 
-00:04:18.530 --> 00:04:21.945
-We pretrain on more than five thousand
-hours of action-free human video,
+00:03:10.807 --> 00:03:15.253
+We pretrain on EgoManip-5000H, five
+thousand hours of action-free human video,
 
-00:04:21.985 --> 00:04:24.490
-mid-train on more than thirty
-hours of real-robot data,
+00:03:15.293 --> 00:03:17.865
+then mid-train on thirty
+hours of real-robot data.
 
-00:04:24.530 --> 00:04:26.269
-then post-train on each benchmark.
-
-00:04:29.129 --> 00:04:32.123
-EgoManip-5000H comes from
-three filtering stages:
-
-00:04:32.163 --> 00:04:35.379
-real scenes, egocentric
-manipulation, and visible hands.
-
-00:04:35.920 --> 00:04:39.164
-Two thousand eight hundred fifty-nine
-hours keep the hands in view and supervise
-
-00:04:39.204 --> 00:04:41.795
-GeoDelta; the rest supervise video only.
-
-00:04:42.351 --> 00:04:44.834
-The clips span repair,
-crafts, electronics,
-
-00:04:44.874 --> 00:04:46.817
-cooking, gardens, and animals.
-
-00:04:49.795 --> 00:04:51.364
+00:03:20.628 --> 00:03:22.173
 Now, the results.
 
-00:04:59.195 --> 00:05:02.264
+00:03:27.028 --> 00:03:30.046
 Gnomon4D leads all three
 simulation benchmarks.
 
-00:05:02.805 --> 00:05:04.344
-On RoboTwin 2.0:
+00:03:30.572 --> 00:03:34.985
+On RoboTwin 2.0, it averages ninety-four
+point three percent over fifty bimanual
 
-00:05:04.384 --> 00:05:06.480
-ninety-four point three
-percent average success,
+00:03:35.025 --> 00:03:35.766
+tasks.
 
-00:05:06.520 --> 00:05:09.759
-over fifty bimanual tasks, in
-clean and randomized scenes.
-
-00:05:12.195 --> 00:05:16.110
+00:03:38.228 --> 00:03:42.072
 On VLABench, its lead over OpenWAM-Alpha
 grows from zero point six points in
 
-00:05:16.150 --> 00:05:19.059
+00:03:42.112 --> 00:03:44.974
 distribution to seven point
 four under unseen textures.
 
-00:05:19.600 --> 00:05:21.714
-Motion does not change with appearance.
+00:03:47.428 --> 00:03:50.602
+On RoboDojo, it doubles the
+success rate of OpenWAM-Alpha,
 
-00:05:24.162 --> 00:05:28.008
-On RoboDojo, it doubles the success rate
-of the strongest world-action model,
-
-00:05:28.048 --> 00:05:30.969
+00:03:50.642 --> 00:03:53.504
 and reaches twenty-eight point
 two percent on precision tasks.
 
-00:05:39.829 --> 00:05:41.346
+00:03:58.961 --> 00:04:00.428
 On a real UR5e arm:
 
-00:05:41.386 --> 00:05:44.061
+00:04:00.468 --> 00:04:02.928
 five tasks, eighty trials
-per task for every method,
+per task for each method,
 
-00:05:44.101 --> 00:05:45.829
-half of them under visual shifts.
+00:04:02.968 --> 00:04:04.915
+half under unseen lighting, tablecloths,
 
-00:05:48.595 --> 00:05:52.624
-The arm carries a one-DoF gripper and
-is observed by two RealSense D435i
+00:04:04.955 --> 00:04:06.868
+object appearance, or distractors.
 
-00:05:52.664 --> 00:05:55.255
-cameras, one fixed at the
-head and one on the wrist.
+00:04:09.295 --> 00:04:11.476
+Gnomon4D ranks first on every task:
 
-00:05:57.929 --> 00:06:00.429
-Gnomon4D ranks first on every task.
+00:04:11.516 --> 00:04:13.496
+eighty-two point five
+percent in distribution,
 
-00:06:00.970 --> 00:06:03.515
-Eighty-two point five
-percent in distribution.
+00:04:13.536 --> 00:04:15.270
+seventy-eight under visual shifts.
 
-00:06:04.072 --> 00:06:06.100
-Seventy-eight percent
-under unseen lighting,
-
-00:06:06.140 --> 00:06:08.924
-tablecloths, object
-appearance, and distractors.
-
-00:06:09.481 --> 00:06:13.333
+00:04:15.796 --> 00:04:19.584
 Its lead over the strongest baseline
 widens from seven points to sixteen.
 
-00:06:15.995 --> 00:06:17.723
-Ablations trace the gains.
+00:04:22.228 --> 00:04:23.907
+Ablations trace each gain.
 
-00:06:18.264 --> 00:06:21.048
-Object motion matters more
-than re-encoding the arm.
+00:04:24.444 --> 00:04:26.379
+Object motion adds three
+point four points,
 
-00:06:21.605 --> 00:06:24.105
-Guiding where and when to
-read beats adding queries.
+00:04:26.419 --> 00:04:29.459
+guided readout two point six, and
+pretraining four point eight.
 
-00:06:24.650 --> 00:06:27.286
-And human video transfers
-through GeoDelta.
-
-00:06:30.562 --> 00:06:33.426
+00:04:32.695 --> 00:04:35.512
 A sundial reads time from
 the geometry of a shadow.
 
-00:06:33.978 --> 00:06:37.580
+00:04:36.049 --> 00:04:39.591
 Gnomon4D reads where and when to
 act from the geometry of motion.
+
+00:04:44.161 --> 00:04:45.271
+More cases.
