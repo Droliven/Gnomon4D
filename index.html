@@ -59,11 +59,11 @@
 <section id="motivation" class="sec">
   <p class="eyebrow"><b>01</b> / Motivation</p>
   <h2>World–action models imagine the future, <i>then act.</i></h2>
-  <p class="lede">From the current observation and an instruction, a world–action model (WAM) predicts future frames and the actions that produce them. Below, ours on a randomized RoboTwin 2.0 scene. The predicted future is still an incomplete control interface: it is unclear what it should encode, and where in it the action should look.</p>
+  <p class="lede">From the current observation and an instruction, a world–action model (WAM) predicts future frames and the actions that produce them. Below, a randomized RoboTwin 2.0 demonstration and the future a WAM learns to predict. The predicted future is still an incomplete control interface: it is unclear what it should encode, and where in it the action should look.</p>
   <figure class="triple">
-    <div class="tri-head"><span>Execution</span><span class="g">Imagined video</span><span class="g">Imagined GeoDelta</span></div>
+    <div class="tri-head"><span>Observation</span><span class="g">Future video</span><span class="g">Future GeoDelta</span></div>
     <video class="demo-video" controls preload="none" data-src="assets/media/demo/lift_pot.mp4" poster="assets/media/demo/lift_pot.jpg" muted loop playsinline></video>
-    <figcaption><span class="instr">“Raise the metal kitchenpot using both arms.”</span><span>Closed-loop rollout, success · predicted frames are 24 control steps ahead</span></figcaption>
+    <figcaption><span class="instr">“Grab the round kitchenpot with handles and lift together.”</span><span>Demonstration, ground truth · future frames are 24 control steps ahead</span></figcaption>
   </figure>
 
   <div class="gap" id="gap1">
@@ -72,7 +72,7 @@
     <figure class="triple">
       <div class="tri-head"><span>RGB</span><span>Depth</span><span class="g">GeoDelta</span></div>
       <video class="demo-video" controls preload="none" data-src="assets/media/demo/repr.mp4" poster="assets/media/demo/repr.jpg" muted loop playsinline></video>
-      <div class="tri-foot"><span>appearance and motion entangled</span><span>no correspondence across time</span><span>(Δu, Δv, Δd) of the same point</span></div>
+      <div class="tri-foot"><span>appearance and motion entangled</span><span>no correspondence across time</span><span>where the same point moves, in 3D</span></div>
     </figure>
   </div>
 
@@ -104,8 +104,8 @@
       <p class="ja-lab">joint attention</p>
     </div>
     <div class="p-col p-out">
-      <div class="p-box" data-w="ov"><p class="p-tag">Imagined video</p><video class="sync" data-src="assets/media/pipe/vid.mp4" poster="assets/media/pipe/vid.jpg" muted loop playsinline></video></div>
-      <div class="p-box" data-c="1" data-w="og"><p class="p-tag g">Imagined GeoDelta</p><video class="sync" data-src="assets/media/pipe/gd.mp4" poster="assets/media/pipe/gd.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-w="ov"><p class="p-tag">Future video</p><video class="sync" data-src="assets/media/pipe/vid.mp4" poster="assets/media/pipe/vid.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-c="1" data-w="og"><p class="p-tag g">Future GeoDelta</p><video class="sync" data-src="assets/media/pipe/gd.mp4" poster="assets/media/pipe/gd.jpg" muted loop playsinline></video></div>
       <div class="p-box" data-w="oa"><p class="p-tag">Action chunk</p><canvas id="pipeAct" width="480" height="150"></canvas></div>
     </div>
     <svg class="p-wires" id="pipeWires" aria-hidden="true"></svg>
@@ -115,7 +115,7 @@
     <a href="#m2" data-c="2"><span class="num">2</span>Where &amp; when</a>
     <a href="#m3" data-c="3"><span class="num">3</span>Human-video pretraining</a>
   </div>
-  <p class="note">Synchronized views of one closed-loop RoboTwin 2.0 rollout (Stack Blocks Two). The imagined video and GeoDelta are the model's predictions 24 control steps ahead. The action curves are the 14 joint targets of a 32-step chunk from a demonstration of the same task.</p>
+  <p class="note">Synchronized views of a RoboTwin 2.0 demonstration (Stack Blocks Two): the observation, and the video and GeoDelta 24 control steps ahead that the experts learn to predict (ground truth). The action curves are the 14 joint targets of a 32-step chunk from the same demonstration.</p>
 
   <!-- 1 GeoDelta -->
   <div class="claim" id="m1">
