@@ -165,6 +165,9 @@ h4 { font: 600 16.5px/1.4 var(--sans); margin: 4px 0 6px; }
 .split > *, .cols2 > * { min-width: 0; }
 .bridge { margin: 56px 0 0; padding: 22px 26px; border-left: 3px solid var(--gold); background: var(--goldbg); border-radius: 0 var(--r) var(--r) 0; font: 400 21px/1.45 var(--serif); color: var(--head); }
 .bridge i { color: var(--gold2); }
+.thesis { margin: 4px 0 22px; padding: 4px 0 4px 22px; border-left: 3px solid var(--gold); max-width: 1000px; font: 400 clamp(20px, 1.9vw, 24px)/1.45 var(--serif); color: var(--head); }
+.thesis .t-a { color: var(--mut); text-decoration: underline; text-decoration-color: var(--line2); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.thesis .t-b { color: var(--gold2); font-style: italic; background: linear-gradient(transparent 62%, var(--goldbg) 62%); }
 .question { margin: 22px 0 0; font: 400 21px/1.45 var(--serif); color: var(--gold2); font-style: italic; }
 
 /* ---------------------------------------------------------------- overview */
