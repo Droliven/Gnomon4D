@@ -382,23 +382,36 @@ steps[0].classList.add("on");
 // ---------------------------------------------------------------- denoising clock
 (() => {
   const box = $("#clock"), cv = $("#cV"), cg = $("#cG"), ca = $("#cA");
-  const W = 320, H = 240, imV = new Image(), imG = new Image();
-  imV.src = P.clock_img.video; imG.src = P.clock_img.geodelta;     // data URIs: file:// images would taint the canvas
-  const base = {}, noise = new Uint8ClampedArray(W * H * 4);
-  const grab = (im, k) => { const c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d"); x.drawImage(im, 0, 0, W, H); base[k] = x.getImageData(0, 0, W, H); };
-  imV.onload = () => { grab(imV, "v"); paint(); }; imG.onload = () => { grab(imG, "g"); paint(); };
-  const rnd = () => { for (let i = 0; i < noise.length; i += 4) { const a = Math.random() * 255, b = Math.random() * 255, c = Math.random() * 255; noise[i] = a; noise[i + 1] = b; noise[i + 2] = c; noise[i + 3] = 255; } };
+  const W = 320, H = 240;
+  // The two world streams are the playing ground-truth videos; the first frames stand in until they can play.
+  const still = {v: new Image(), g: new Image()};
+  still.v.src = P.clock_img.video; still.g.src = P.clock_img.geodelta;
+  const clip = {v: "assets/media/pipe/vid.mp4", g: "assets/media/pipe/gd.mp4"}, vids = {};
+  Object.keys(clip).forEach(k => { const v = document.createElement("video"); v.muted = true; v.loop = true; v.playsInline = true; v.preload = "none"; vids[k] = v; });
+  // noise is composited over the frame with alpha σ, so no pixel is read back from the video
+  const noise = document.createElement("canvas"); noise.width = W; noise.height = H;
+  const nx = noise.getContext("2d"), nd = nx.createImageData(W, H);
+  const rnd = () => { const d = nd.data; for (let i = 0; i < d.length; i += 4) { d[i] = Math.random() * 255; d[i + 1] = Math.random() * 255; d[i + 2] = Math.random() * 255; d[i + 3] = 255; } nx.putImageData(nd, 0, 0); };
   rnd();
   const q = P.clock_q, aN = q.map(r => r.map(() => Math.random()));
   const u = $("#clockU"), pb = $("#clockPlay");
   let playing = true, step = 0, hold = 0, inview = false;
-  new IntersectionObserver(es => { inview = es[0].isIntersecting; }, {threshold: 0.2}).observe(box);
-  function blend(ctx, img, s) {
-    if (!img) return;
-    const out = ctx.createImageData(W, H), d = out.data, b = img.data;
-    for (let i = 0; i < d.length; i++) d[i] = (1 - s) * b[i] + s * noise[i];
-    for (let i = 3; i < d.length; i += 4) d[i] = 255;
-    ctx.putImageData(out, 0, 0);
+  const run = () => {
+    const on = inview && playing && !document.hidden;
+    Object.entries(vids).forEach(([k, v]) => {
+      if (on) { if (!v.getAttribute("src")) v.src = clip[k]; v.play().catch(() => {}); }
+      else v.pause();
+    });
+  };
+  new IntersectionObserver(es => { inview = es[0].isIntersecting; run(); }, {threshold: 0.2}).observe(box);
+  document.addEventListener("visibilitychange", run);
+  vids.v.addEventListener("timeupdate", () => { if (Math.abs(vids.g.currentTime - vids.v.currentTime) > 0.15) vids.g.currentTime = vids.v.currentTime; });
+  function blend(ctx, k, s) {
+    const v = vids[k], src = v.readyState >= 2 ? v : still[k];
+    const sw = src.videoWidth || src.naturalWidth, sh = src.videoHeight || src.naturalHeight;
+    ctx.globalAlpha = 1; ctx.fillStyle = COL.canvas; ctx.fillRect(0, 0, W, H);
+    if (sw && sh) { const sc = Math.max(W / sw, H / sh), dw = sw * sc, dh = sh * sc; ctx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh); }
+    if (s > 0) { ctx.globalAlpha = s; ctx.drawImage(noise, 0, 0); ctx.globalAlpha = 1; }
   }
   function actions(ctx, s) {
     ctx.globalAlpha = 1; ctx.fillStyle = COL.canvas; ctx.fillRect(0, 0, W, H);
@@ -420,25 +433,28 @@ steps[0].classList.add("on");
   }
   function paint() {
     const uu = step / 20, sV = 1 - uu, sG = Math.max(1 - 2 * uu, 0);
-    blend(cv.getContext("2d"), base.v, sV);
-    blend(cg.getContext("2d"), base.g, sG);
+    blend(cv.getContext("2d"), "v", sV);
+    blend(cg.getContext("2d"), "g", sG);
     actions(ca.getContext("2d"), sG);
     $("#sV").textContent = `σ = ${sV.toFixed(2)}`; $("#sG").textContent = `σ = ${sG.toFixed(2)}`; $("#sA").textContent = `σ = ${sG.toFixed(2)}`;
     $("#clockLbl").textContent = `step ${Math.floor(step)} / 20`;
     $("#ready").classList.toggle("on", step >= 10);
     u.value = step;
   }
-  u.addEventListener("input", () => { step = +u.value; playing = false; pb.textContent = "▶"; paint(); });
+  u.addEventListener("input", () => { step = +u.value; playing = false; pb.textContent = "▶"; run(); paint(); });
   document.addEventListener("themechange", paint);
-  pb.addEventListener("click", () => { playing = !playing; pb.textContent = playing ? "❚❚" : "▶"; if (playing && step >= 20) step = 0; });
+  still.v.onload = still.g.onload = paint;
+  pb.addEventListener("click", () => { playing = !playing; pb.textContent = playing ? "❚❚" : "▶"; if (playing && step >= 20) step = 0; run(); });
   let last = 0;
   (function tick(t) {
     requestAnimationFrame(tick);
-    if (!playing || !inview || t - last < 60) return;
+    if (!inview || t - last < 60) return;
     last = t;
-    if (step >= 20) { if (++hold > 30) { step = 0; hold = 0; } }
-    else step = Math.min(20, step + 0.25);
-    if (Math.random() < .5) rnd();
+    if (playing) {
+      if (step >= 20) { if (++hold > 30) { step = 0; hold = 0; } }
+      else step = Math.min(20, step + 0.25);
+      if (Math.random() < .5) rnd();
+    }
     paint();
   })(0);
 })();

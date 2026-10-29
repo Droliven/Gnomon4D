@@ -56,8 +56,8 @@
   <div class="stats">
     <div class="stat"><p class="n" data-count="94.33">94.33</p><p class="u">% avg. success</p><p class="l">RoboTwin 2.0 · 50 tasks</p></div>
     <div class="stat"><p class="n" data-count="62.5">62.5</p><p class="u">% avg. over five tracks</p><p class="l">VLABench · +7.4 on unseen textures</p></div>
-    <div class="stat"><p class="n" data-count="23.86">23.86</p><p class="u">% success · 2.0× the best WAM</p><p class="l">RoboDojo · 28.24 on Precision</p></div>
-    <div class="stat"><p class="n"><span data-count="82.5">82.5</span><em>/</em><span data-count="78.0">78.0</span></p><p class="u">% ID / OOD</p><p class="l">Real UR5e · +7.0 / +16.0 over the best baseline</p></div>
+    <div class="stat"><p class="n" data-count="23.86">23.86</p><p class="u">% success · 2.0× the SOTA WAM</p><p class="l">RoboDojo · 28.24 on Precision</p></div>
+    <div class="stat"><p class="n"><span data-count="82.5">82.5</span><em>/</em><span data-count="78.0">78.0</span></p><p class="u">% ID / OOD</p><p class="l">Real UR5e · +7.0 / +16.0 over the SOTA baseline</p></div>
   </div>
   <figure class="triple ov-demo">
     <div class="tri-head"><span>Observation</span><span class="g">Future video</span><span class="g">Future GeoDelta</span></div>
@@ -235,13 +235,15 @@
   <!-- 2.2 where & when -->
   <div class="blk" id="m2" data-toc="2.2 Where and when">
     <div class="blk-head"><span class="blk-n"><span class="num">2</span>2.2</span><h3>Read <i>where</i> the object moves against the hand, and <i>when</i> that changes.</h3></div>
-    <p class="blk-lede">Joint attention sees every future token but not which ones matter. Interaction-Salient Attention (InSAttn) compares object and embodiment motion: while the gripper approaches, the block stays still and the relative motion c is high; once grasped they move together and c drops. Transition-Anchored Aggregation (TransAgg) weights frames by how much c changes, so grasp and release dominate the readout given to the Action expert. These are the two curves of 1.2.</p>
+    <p class="blk-lede">Joint attention sees every future token but not which ones matter. Interaction-Salient Attention (InSAttn) reads where object and embodiment motion differ: while the gripper approaches, the block stays still and the relative motion c is high; once grasped they move together and c drops. Transition-Anchored Aggregation (TransAgg) weights frames by how much c changes, so grasp and release dominate the readout given to the Action expert.</p>
     <div class="cols2 eqcards">
       <div class="card"><p class="tag">Where · Interaction-Salient Attention</p>
+        <video class="demo-video eq-clip" controls preload="none" data-src="assets/media/readout/where.mp4" poster="assets/media/readout/where.jpg" muted loop playsinline></video>
         <div class="eq">$$c_{n,i}=\frac{\|\boldsymbol\delta_{n,i}-\bar{\boldsymbol\delta}^{\mathrm e}_{n,i}\|}{\|\boldsymbol\delta_{n,i}\|+\|\bar{\boldsymbol\delta}^{\mathrm e}_{n,i}\|+\varepsilon}$$</div>
         <div class="eq small">$$s_{n,i}=\operatorname{softmax}_i\big(\phi(c_{n,i};\ell,\mathbf s_0)+\log(\rho^{\mathrm e}_{n,i}+\rho^{\mathrm o}_{n,i})\big)$$</div>
         <p>c is near 1 where object and embodiment move relative to each other and near 0 where they move together. A small MLP scores each token from c given the instruction and proprioception, and the saliency s reweights each query's attention within a frame.</p></div>
       <div class="card"><p class="tag">When · Transition-Anchored Aggregation</p>
+        <video class="demo-video eq-clip" controls preload="none" data-src="assets/media/readout/when.mp4" poster="assets/media/readout/when.jpg" muted loop playsinline></video>
         <div class="eq">$$r_n=\sum_i s_{n,i}\,|\Delta c_{n,i}|$$</div>
         <div class="eq small">$$\mathbf z_k=\sum_n\operatorname{softmax}_n\big(\mathbf q_k^{\top}\mathbf y_{k,n}+\log r_n\big)\,\mathbf y_{k,n}$$</div>
         <p>Each of the K = 32 queries pools its per-frame readouts over time, weighted by how much c changes on salient tokens, so grasp and release frames dominate. The resulting tokens enter the Action expert through residual cross-attention.</p></div>
@@ -262,7 +264,7 @@
       <p class="prose">GeoDelta describes how surfaces move, not how a body is controlled. A human hand and a robot gripper share one supervision space with no retargeting, so action-free human video can teach the world experts how an embodiment interacts with objects.</p>
       <ol class="curri mini">
         <li><b>5,000+ h</b><span>human video, EgoManip-5000H · Video and GeoDelta experts</span></li>
-        <li><b>30+ h</b><span>dual-arm robot video, Robot-30H · Action expert added</span></li>
+        <li><b>30+ h</b><span>dual-arm robot video, Robot-30H: 10,500 teleoperated trajectories, 53 tasks, six kinds of real scenes · Action expert added</span></li>
         <li><b>Post-train</b><span>one policy per benchmark</span></li>
       </ol>
     </div>
@@ -277,7 +279,7 @@
   <div class="blk sub-blk" id="m3-data">
     <div class="blk-head"><span class="blk-n">2.3</span><h3>How EgoManip-5000H <i>is built.</i></h3></div>
     <div class="cols2">
-      <p class="prose">EgoManip-5000H is mined from a sub-pool of a large video library in three stages: real-scene filtering, an ego-manipulation classifier, and a split by hand visibility. Hand-visible clips supervise both the Video and GeoDelta experts; the hand GeoDelta is rendered from fitted MANO meshes after compensating camera rotation. Robot-30H adds 10,500 teleoperated dual-arm trajectories over 53 tasks in six kinds of real scenes, with GeoDelta of both arms and the manipulated objects.</p>
+      <p class="prose">EgoManip-5000H is mined from a sub-pool of a large video library in three stages: real-scene filtering, an ego-manipulation classifier, and a split by hand visibility. Hand-visible clips supervise both the Video and GeoDelta experts; the hand GeoDelta is rendered from fitted MANO meshes after compensating camera rotation. Interaction types: bimanual 45.4%, tool use 18.9%, deformable objects 17.8%.</p>
       <table class="t">
         <tr><th>Stage</th><th>Clips</th><th>Hours</th><th>Supervises</th></tr>
         <tr><td>1 · Real-scene filtering</td><td>17.23M</td><td>37,132</td><td>–</td></tr>
@@ -287,10 +289,7 @@
       </table>
     </div>
     <figure class="paperfig"><img loading="lazy" src="assets/fig/humanego_pipeline.jpg" alt="EgoManip-5000H curation pipeline" data-zoom></figure>
-    <div class="figrow">
-      <figure class="paperfig"><img loading="lazy" src="assets/fig/humanego_diversity.jpg" alt="EgoManip-5000H diversity" data-zoom><figcaption>EgoManip-5000H windows across scenes: frames t and t+32 and the hand GeoDelta at t+16.</figcaption></figure>
-      <figure class="paperfig"><img loading="lazy" src="assets/fig/robot_examples.jpg" alt="Robot-30H examples" data-zoom><figcaption>Robot-30H windows: GeoDelta of both arms and the manipulated objects; parts at rest are mid-gray.</figcaption></figure>
-    </div>
+    <figure class="paperfig"><img loading="lazy" src="assets/fig/humanego_diversity.jpg" alt="EgoManip-5000H diversity" data-zoom><figcaption>EgoManip-5000H windows across scenes: frames t and t+32 and the hand GeoDelta at t+16.</figcaption></figure>
   </div>
 
   <!-- 2.4 denoising clock -->
@@ -306,7 +305,7 @@
       <figure><div class="ph g"><span>Action chunk</span><span class="mono" id="sA">σ = 1.00</span></div><canvas id="cA" width="320" height="240"></canvas></figure>
     </div>
     <div class="clock-ctl"><button class="icon" id="clockPlay" aria-label="pause">❚❚</button><input type="range" id="clockU" min="0" max="20" step="0.05" value="0"><span class="mono" id="clockLbl">step 0 / 20</span><span class="ready" id="ready">Actions ready</span></div>
-    <p class="note">Real frames from a RoboTwin 2.0 demonstration; the noise level follows the schedule above, the noise itself is illustrative.</p>
+    <p class="note">The ground-truth future video and GeoDelta of a RoboTwin 2.0 demonstration (Stack Blocks Two), playing; the noise level follows the schedule above, the noise itself is illustrative.</p>
   </div>
 </section>
 
@@ -314,13 +313,13 @@
 <section id="results" class="sec" data-toc="03 Results">
   <p class="eyebrow"><b>03</b> / Results</p>
   <h2>First on three simulation benchmarks <i>and a real robot.</i></h2>
-  <p class="lede">The lead is largest where appearance changes or precision matters: +7.4 on VLABench unseen textures, 2.0× the success of the strongest WAM on RoboDojo, and +16.0 points under visual shifts on the real robot. Each benchmark below shows the numbers next to closed-loop rollouts.</p>
+  <p class="lede">The lead is largest where appearance changes or precision matters: +7.4 on VLABench unseen textures, 2.0× the success of the SOTA WAM on RoboDojo, and +16.0 points under visual shifts on the real robot. Each benchmark below shows the numbers next to closed-loop rollouts.</p>
   <ol class="outline"><li><b>3.1</b>RoboTwin 2.0</li><li><b>3.2</b>VLABench</li><li><b>3.3</b>RoboDojo</li><li><b>3.4</b>Real robot</li><li><b>3.5</b>Ablations</li></ol>
 
   <!-- RoboTwin -->
   <div class="blk" id="rt2" data-toc="3.1 RoboTwin 2.0">
     <div class="blk-head res"><span class="blk-n">3.1</span><h3>RoboTwin 2.0: 50 bimanual tasks, <i>clean and randomized.</i></h3><p class="key"><b>94.33</b>% avg.</p></div>
-    <p class="blk-lede">One multitask policy, closed loop, first in both settings: +1.71 over MECo-WAM, the strongest geometry- or flow-based WAM, and +0.77 over the structured-readout STARRY. Rollouts show the executed head camera next to the prediction 24 control steps ahead.</p>
+    <p class="blk-lede">One multitask policy, closed loop, first in both settings: +1.71 over MECo-WAM, the SOTA geometry- or flow-based WAM, and +0.77 over the structured-readout STARRY. Rollouts show the executed head camera next to the prediction 24 control steps ahead.</p>
     <div class="cases wide" data-bench="rt2" data-groups="random:Randomized,clean:Clean" data-heads="Execution|Imagined video|Imagined GeoDelta"></div>
     <div class="cols2 t2up">
       <table class="t compact">
@@ -378,7 +377,7 @@
 
   <!-- RoboDojo -->
   <div class="blk" id="rd" data-toc="3.3 RoboDojo">
-    <div class="blk-head res"><span class="blk-n">3.3</span><h3>RoboDojo: twice the success of the strongest WAM, <i>and precise.</i></h3><p class="key"><b>23.86</b>% SR · <b>2.0×</b></p></div>
+    <div class="blk-head res"><span class="blk-n">3.3</span><h3>RoboDojo: twice the success of the SOTA WAM, <i>and precise.</i></h3><p class="key"><b>23.86</b>% SR · <b>2.0×</b></p></div>
     <div class="split res-split">
       <div>
         <p class="prose">RoboDojo spans 42 bimanual tasks over five dimensions. Gnomon4D doubles the success rate of OpenWAM-Alpha (23.86% vs. 11.92%) and reaches 28.24% on Precision against at most 20.42%: these tasks need exact positions both in the image plane and in depth, which GeoDelta encodes jointly.</p>
@@ -410,7 +409,7 @@
     <div class="split res-split">
       <div>
         <p class="prose">A UR5e arm with a parallel gripper, a fixed third-person RGB-D camera and a wrist camera. Five tasks, 50 demonstrations each. Every method runs 80 trials per task from shared initial configurations: 40 in distribution and 40 under unseen lighting, tablecloth, object appearance or added distractors (10 each).</p>
-        <p class="prose">The baselines trade accuracy for robustness: FlowWAM leads them in distribution but loses 14.5 points under shifts. Gnomon4D loses 4.5, and its margin over the strongest baseline widens from 7.0 to 16.0 points.</p>
+        <p class="prose">The baselines trade accuracy for robustness: FlowWAM leads them in distribution but loses 14.5 points under shifts. Gnomon4D loses 4.5, and its margin over the SOTA baseline widens from 7.0 to 16.0 points.</p>
         <div class="vbars short" id="realbars"></div>
       </div>
       <div>
