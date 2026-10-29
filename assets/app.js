@@ -6,6 +6,18 @@ const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls)
 const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 const visible = new WeakMap();      // element -> currently in view
 
+// ---------------------------------------------------------------- color theme: light by default, the reader's choice is remembered
+const root = document.documentElement, COL = {};
+const readTheme = () => { const s = getComputedStyle(root); ["canvas", "canvas-ink", "gold", "gold2", "line", "bar"].forEach(k => { COL[k] = s.getPropertyValue("--" + k).trim(); }); };
+readTheme();
+$("#themeBtn").addEventListener("click", () => {
+  const next = root.dataset.theme === "dark" ? "light" : "dark";
+  root.dataset.theme = next;
+  try { localStorage.setItem("g4-theme", next); } catch (e) {}
+  readTheme();
+  document.dispatchEvent(new Event("themechange"));
+});
+
 // ---------------------------------------------------------------- formulas
 renderMathInElement(document.body, {delimiters: [{left: "$$", right: "$$", display: true}, {left: "\\(", right: "\\)", display: false}], throwOnError: false});
 
@@ -105,35 +117,42 @@ window.addEventListener("resize", queueVideos, {passive: true});
 connection?.addEventListener("change", queueVideos);
 $$("video.demo-video:not(#pipeObs), .tile video").forEach(v => watch(v));
 
-// generic tab containers
-$$("[data-tabs]").forEach(box => {
-  const btns = $$(":scope > .seg button", box), panes = $$(":scope > .pane", box);
-  const show = key => {
-    btns.forEach((b, i) => b.classList.toggle("on", (b.dataset.t ?? i) == key));
-    panes.forEach((p, i) => {
-      const on = (p.dataset.p ?? String(i)) == key;
-      p.classList.toggle("on", on);
-      if (!on) $$("video", p).forEach(pauseAuto);
-    });
-    queueVideos();
-    box.dispatchEvent(new CustomEvent("tab", {detail: key}));
-  };
-  btns.forEach(b => b.addEventListener("click", () => show(b.dataset.t)));
-  box.show = show;
-});
-
-// ---------------------------------------------------------------- nav highlight
-const navLinks = $$("#nav a");
-const secIO = new IntersectionObserver(es => es.forEach(e => {
-  if (!e.isIntersecting) return;
-  const id = e.target.id;
-  navLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
-}), {rootMargin: "-45% 0px -50% 0px"});
-$$("main > section").forEach(s => secIO.observe(s));
+// ---------------------------------------------------------------- reading position: cover, progress bar, top nav and contents rail
+(() => {
+  const rail = $("#rail"), navLinks = $$("#nav a"), prog = $("#prog"), cover = $("#top"), coverIn = $("#coverIn");
+  const marks = $$("[data-toc]");
+  const links = marks.map(m => {
+    const sub = !m.matches("main > section");
+    const a = el("a", sub ? "subl" : "top", m.dataset.toc);
+    a.href = "#" + m.id;
+    rail.appendChild(a);
+    return a;
+  });
+  const chapterOf = m => m.closest("main > section");
+  let frame = 0;
+  function update() {
+    frame = 0;
+    const y = scrollY, vh = innerHeight;
+    document.body.classList.toggle("on-cover", y < cover.offsetHeight * 0.55);
+    const k = Math.min(1, y / (cover.offsetHeight * 0.7));
+    coverIn.style.opacity = (1 - k).toFixed(3);
+    coverIn.style.transform = k ? `translateY(${(-60 * k).toFixed(1)}px) scale(${(1 - 0.04 * k).toFixed(4)})` : "";
+    prog.style.width = (100 * y / Math.max(1, document.documentElement.scrollHeight - vh)).toFixed(2) + "%";
+    let cur = -1;
+    marks.forEach((m, i) => { if (m.getBoundingClientRect().top < vh * 0.38) cur = i; });
+    const chap = cur >= 0 ? chapterOf(marks[cur]) : null;
+    links.forEach((a, i) => { a.classList.toggle("on", i === cur); a.classList.toggle("in", !!chap && chapterOf(marks[i]) === chap); });
+    navLinks.forEach(a => a.classList.toggle("on", !!chap && a.getAttribute("href") === "#" + chap.id));
+  }
+  const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
+  addEventListener("scroll", queue, {passive: true});
+  addEventListener("resize", queue, {passive: true});
+  update();
+})();
 
 // reveal on scroll
-const rio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); rio.unobserve(e.target); } }), {threshold: 0.12});
-$$(".sec > h2, .sec > .lede, .card, .stat, .triple, .paperfig, .film, .claim, .pipe, .gd-dom figure").forEach(e => { e.classList.add("reveal"); rio.observe(e); });
+const rio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); rio.unobserve(e.target); } }), {threshold: 0.08});
+$$(".card, .stat, .triple, .paperfig, .film, .pipe, .routes, .gd-dom figure, .media-card").forEach(e => { e.classList.add("reveal"); rio.observe(e); });
 
 // lightbox
 const lb = $("#lightbox");
@@ -173,10 +192,12 @@ Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
   const ro = new ResizeObserver(wires); ro.observe(fig);
   window.addEventListener("load", wires);
   // highlight one contribution at a time: on hover, otherwise cycling while in view
-  const keys = $$("#pipeKeys a"); let hover = 0, cyc = 1, inview = false;
+  const keys = $$("#pipeKeys [data-c]"); let hover = 0, inview = false;
   const hl = c => { fig.classList.toggle("hl", !!c); [1, 2, 3].forEach(k => fig.classList.toggle("hl-" + k, k === c)); keys.forEach(a => a.classList.toggle("on", +a.dataset.c === c)); };
-  keys.forEach(a => { a.addEventListener("mouseenter", () => { hover = +a.dataset.c; hl(hover); }); a.addEventListener("mouseleave", () => { hover = 0; hl(0); }); });
-  $$("[data-c]", fig).forEach(e => { if (e.tagName === "A") { e.addEventListener("mouseenter", () => { hover = +e.dataset.c; hl(hover); }); e.addEventListener("mouseleave", () => { hover = 0; hl(0); }); } });
+  [...keys, ...$$(".lane[data-c], .readout, .p-human", fig)].forEach(a => {
+    a.addEventListener("mouseenter", () => { hover = +a.dataset.c; hl(hover); });
+    a.addEventListener("mouseleave", () => { hover = 0; hl(0); });
+  });
   new IntersectionObserver(es => { inview = es[0].isIntersecting; }, {threshold: 0.3}).observe(fig);
   let ph = 0;
   setInterval(() => { if (hover || !inview) return; ph = (ph + 1) % 8; hl(ph % 2 ? 0 : 1 + (ph / 2 | 0) % 3); }, 1700);
@@ -206,13 +227,14 @@ Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
     requestAnimationFrame(tick);
     if (!inview) return;
     const T = ((t - t0) / 1000) % 4.4, s = Math.max(0, 1 - T / 1.2), w = cv.width, h = cv.height;
-    cx.fillStyle = "#05060e"; cx.fillRect(0, 0, w, h);
+    cx.globalAlpha = 1; cx.fillStyle = COL.canvas; cx.fillRect(0, 0, w, h);
     q.forEach((row, j) => {
       cx.beginPath();
       row.forEach((v, i) => { const y = (1 - s) * v + s * noise[j][i], X = 10 + (w - 20) * i / (row.length - 1), Y = h - 10 - (h - 20) * y; i ? cx.lineTo(X, Y) : cx.moveTo(X, Y); });
-      cx.strokeStyle = s > 0 ? `rgba(170,176,210,${0.3 + 0.4 * (1 - s)})` : "rgba(243,196,109,.8)"; cx.lineWidth = 1.6; cx.stroke();
+      cx.strokeStyle = s > 0 ? COL["canvas-ink"] : COL.gold; cx.globalAlpha = s > 0 ? 0.3 + 0.4 * (1 - s) : 0.85; cx.lineWidth = 1.6; cx.stroke();
     });
-    if (s === 0) { const x = 10 + (w - 20) * Math.min(1, (T - 1.2) / 3); cx.fillStyle = "rgba(243,196,109,.16)"; cx.fillRect(10, 0, x - 10, h); cx.fillStyle = "#f3c46d"; cx.fillRect(x - 1, 0, 2, h); }
+    cx.globalAlpha = 1;
+    if (s === 0) { const x = 10 + (w - 20) * Math.min(1, (T - 1.2) / 3); cx.globalAlpha = 0.16; cx.fillStyle = COL.gold; cx.fillRect(10, 0, x - 10, h); cx.globalAlpha = 1; cx.fillRect(x - 1, 0, 2, h); }
     if (T > 4.3) for (const r of noise) for (let i = 0; i < r.length; i++) r[i] = Math.random();
   })(0);
 })();
@@ -326,23 +348,24 @@ steps[0].classList.add("on");
 
 // ---------------------------------------------------------------- mu-law codec curve
 (() => {
-  const svg = $("#mulaw"), mu = 31, W = 420, H = 300, L = 46, R = 16, T = 16, B = 40;
+  const svg = $("#mulaw"), mu = 31, W = 420, H = 260, L = 46, R = 16, T = 14, B = 40;
   const X = z => L + (z + 1) / 2 * (W - L - R), Y = I => T + (1 - I / 255) * (H - T - B);
   const Ic = z => 127.5 * (1 + Math.sign(z) * Math.log(1 + mu * Math.abs(z)) / Math.log(1 + mu));
   let lin = "", cur = "";
   for (let i = 0; i <= 200; i++) { const z = -1 + i / 100; lin += `${i ? "L" : "M"}${X(z)},${Y(127.5 * (1 + z))}`; cur += `${i ? "L" : "M"}${X(z)},${Y(Ic(z))}`; }
+  svg.classList.add("chart");
   svg.innerHTML = `
-    <g stroke="rgba(255,255,255,.08)">${[-1, -.5, 0, .5, 1].map(z => `<line x1="${X(z)}" x2="${X(z)}" y1="${T}" y2="${H - B}"/>`).join("")}
+    <g class="gl">${[-1, -.5, 0, .5, 1].map(z => `<line x1="${X(z)}" x2="${X(z)}" y1="${T}" y2="${H - B}"/>`).join("")}
       ${[0, 64, 128, 191, 255].map(I => `<line x1="${L}" x2="${W - R}" y1="${Y(I)}" y2="${Y(I)}"/>`).join("")}</g>
-    <g fill="#6f7494" font-size="12" font-family="Inter">${[-1, -.5, 0, .5, 1].map(z => `<text x="${X(z)}" y="${H - B + 18}" text-anchor="middle">${z}</text>`).join("")}
+    <g style="font-size:12px">${[-1, -.5, 0, .5, 1].map(z => `<text x="${X(z)}" y="${H - B + 18}" text-anchor="middle">${z}</text>`).join("")}
       ${[0, 128, 255].map(I => `<text x="${L - 8}" y="${Y(I) + 4}" text-anchor="end">${I}</text>`).join("")}
       <text x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">normalized displacement z</text></g>
-    <path d="${lin}" fill="none" stroke="#6f7494" stroke-dasharray="4 4" stroke-width="1.5"/>
-    <path d="${cur}" fill="none" stroke="#e8a93e" stroke-width="2.6"/>
-    <text x="${X(.32)}" y="${Y(232)}" fill="#f3c46d" font-size="13" font-family="Inter">μ-law, μ = 31</text>
-    <text x="${X(.42)}" y="${Y(172)}" fill="#a2a7c4" font-size="12.5" font-family="Inter">linear</text>
-    <line id="muV" stroke="#f3c46d" stroke-width="1" stroke-dasharray="3 3"/><line id="muH" stroke="#f3c46d" stroke-width="1" stroke-dasharray="3 3"/>
-    <circle id="muP" r="6" fill="#f3c46d" stroke="#0a0c1b" stroke-width="2"/>`;
+    <path class="lin" d="${lin}"/>
+    <path class="cc" d="${cur}"/>
+    <text class="gt" x="${X(.32)}" y="${Y(232)}">μ-law, μ = 31</text>
+    <text x="${X(.42)}" y="${Y(172)}">linear</text>
+    <line id="muV" class="gx"/><line id="muH" class="gx"/>
+    <circle id="muP" class="dot" r="6"/>`;
   const inp = $("#muIn");
   const upd = () => {
     const z = +inp.value, I = Ic(z);
@@ -378,8 +401,8 @@ steps[0].classList.add("on");
     ctx.putImageData(out, 0, 0);
   }
   function actions(ctx, s) {
-    ctx.fillStyle = "#05060e"; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "rgba(255,255,255,.06)"; ctx.lineWidth = 1;
+    ctx.globalAlpha = 1; ctx.fillStyle = COL.canvas; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = COL.line; ctx.lineWidth = 1;
     for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(0, H * k / 4); ctx.lineTo(W, H * k / 4); ctx.stroke(); }
     q.forEach((row, j) => {
       ctx.beginPath();
@@ -388,10 +411,12 @@ steps[0].classList.add("on");
         const X = 14 + (W - 28) * i / (row.length - 1), Y = H - 14 - (H - 28) * y;
         i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
       });
-      ctx.strokeStyle = s === 0 ? `rgba(243,196,109,${0.55 + 0.03 * j})` : `rgba(170,176,210,${0.35 + 0.4 * (1 - s)})`;
+      ctx.strokeStyle = s === 0 ? COL.gold : COL["canvas-ink"];
+      ctx.globalAlpha = s === 0 ? 0.55 + 0.03 * j : 0.35 + 0.4 * (1 - s);
       ctx.lineWidth = s === 0 ? 2 : 1.4; ctx.stroke();
     });
-    ctx.fillStyle = "#a2a7c4"; ctx.font = "12px Inter"; ctx.fillText("14 joints · 32 control steps", 12, 20);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = COL["canvas-ink"]; ctx.font = "12px Inter"; ctx.fillText("14 joints · 32 control steps", 12, 20);
   }
   function paint() {
     const uu = step / 20, sV = 1 - uu, sG = Math.max(1 - 2 * uu, 0);
@@ -404,6 +429,7 @@ steps[0].classList.add("on");
     u.value = step;
   }
   u.addEventListener("input", () => { step = +u.value; playing = false; pb.textContent = "▶"; paint(); });
+  document.addEventListener("themechange", paint);
   pb.addEventListener("click", () => { playing = !playing; pb.textContent = playing ? "❚❚" : "▶"; if (playing && step >= 20) step = 0; });
   let last = 0;
   (function tick(t) {
@@ -426,14 +452,15 @@ steps[0].classList.add("on");
   r.forEach((v, n) => { pr += `L${X(n).toFixed(1)},${Y(v * 0.9).toFixed(1)}`; });
   pr += `L${W},${Y(0)}Z`;
   const ev = P.relation.events;      // gripper close / open in the demonstration
+  svg.classList.add("chart");
   svg.innerHTML = `
-    <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(255,255,255,.15)"/>
-    <line x1="0" x2="${W}" y1="${Y(1)}" y2="${Y(1)}" stroke="rgba(255,255,255,.06)"/>
-    <path d="${pr}" fill="rgba(142,162,255,.22)" stroke="#8ea2ff" stroke-width="1.2"/>
-    <path d="${pc}" fill="none" stroke="#e8a93e" stroke-width="2.6" stroke-linejoin="round"/>
-    ${ev.map(([n, k]) => `<g><line x1="${X(n)}" x2="${X(n)}" y1="${T}" y2="${H - B}" stroke="rgba(243,196,109,.4)" stroke-dasharray="3 4"/><text x="${X(n) + 6}" y="${H - 8}" fill="#a2a7c4" font-size="13" font-family="Inter">${k}</text></g>`).join("")}
-    <line id="relHead" y1="${T - 6}" y2="${H - B}" stroke="#fff" stroke-width="1.6"/>
-    <circle id="relDot" r="6" fill="#e8a93e" stroke="#0a0c1b" stroke-width="2"/>`;
+    <line class="ax" x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}"/>
+    <line class="ax2" x1="0" x2="${W}" y1="${Y(1)}" y2="${Y(1)}"/>
+    <path class="rr" d="${pr}"/>
+    <path class="cc" d="${pc}"/>
+    ${ev.map(([n, k]) => `<g><line class="ev" x1="${X(n)}" x2="${X(n)}" y1="${T}" y2="${H - B}"/><text x="${X(n) + 6}" y="${H - 8}">${k}</text></g>`).join("")}
+    <line id="relHead" class="head" y1="${T - 6}" y2="${H - B}"/>
+    <circle id="relDot" class="dot" r="6"/>`;
   const head = $("#relHead"), dot = $("#relDot"), st = $("#relState");
   let lastFrame = -1;
   (function tick() {
@@ -482,12 +509,6 @@ steps[0].classList.add("on");
 })();
 
 // ---------------------------------------------------------------- bar charts
-const hbars = (node, rows, lo, hi, note) => {
-  rows.forEach(([n, v, o]) => node.appendChild(el("div", "hb" + (o ? " ours" : ""),
-    `<span>${n}</span><div class="track"><div class="fill" data-w="${(v - lo) / (hi - lo) * 100}"></div></div><span class="v">${v.toFixed(2)}</span>`)));
-  if (note) node.appendChild(el("p", "note", note));
-  animOnce(node, () => $$(".fill", node).forEach(f => f.style.width = f.dataset.w + "%"), 0.2);
-};
 const vbars = (node, groups, series, max, delta) => {
   const g = el("div", "vgroup"), lab = el("div", "vlabels"), key = el("div", "vkey");
   groups.forEach((name, i) => {
@@ -501,10 +522,7 @@ const vbars = (node, groups, series, max, delta) => {
   node.append(g, lab, key);
   const go = () => { node.classList.add("go"); $$(".b", node).forEach(b => b.style.height = b.dataset.h + "%"); };
   animOnce(node, go, 0.2);
-  node.closest("[data-tabs]")?.addEventListener("tab", () => { if (node.offsetParent) go(); });
 };
-hbars($("#rt2bars"), [["Gnomon4D", 94.33, 1], ["Qwen-RobotManip", 93.85], ["OpenWAM-Alpha", 93.60], ["LingBot-VA 2.0", 93.60],
-  ["STARRY", 93.56], ["Galaxea G-0.5", 93.28], ["MECo-WAM", 92.62], ["FlowWAM", 92.54]], 88, 95, "Average success %, axis from 88%.");
 vbars($("#vlbars"), ["ID", "Cat", "CS", "Ins", "Tex", "Avg."],
   [{name: "OpenWAM-Alpha", vals: [83.4, 38.1, 58.0, 53.8, 61.4, 58.9]}, {name: "Gnomon4D", vals: [84.0, 39.1, 61.7, 59.1, 68.8, 62.5], ours: 1}], 100, true);
 vbars($("#realbars"), ["In distribution", "Visual shifts"],
@@ -518,8 +536,6 @@ $$("[data-count]").forEach(n => {
     (function f(t) { const p = Math.min(1, (t - t0) / 1400), e = 1 - Math.pow(1 - p, 3); n.textContent = (v * e).toFixed(dec); if (p < 1) requestAnimationFrame(f); })(t0);
   }, 0.5);
 });
-const bench = $("#bench");
-$$(".stat").forEach(s => s.addEventListener("click", e => { e.preventDefault(); bench.show(s.dataset.go); bench.scrollIntoView({behavior: "smooth"}); }));
 
 // ---------------------------------------------------------------- case browsers
 $$(".cases").forEach(box => {
@@ -538,11 +554,16 @@ $$(".cases").forEach(box => {
   const wrap = el("div", "cb"), main = el("div", "cb-main"), side = el("div", "cb-list");
   if (heads.length > 1) { const h = el("div", "tri-head" + (heads.length === 2 ? " two" : "")); heads.forEach((t, i) => h.appendChild(el("span", i ? "g" : "", t))); main.appendChild(h); }
   const vid = el("video"); vid.muted = true; vid.playsInline = true; vid.preload = "none";
+  // fixed frame per benchmark, so the poster thumbnail does not resize the player
+  vid.style.aspectRatio = {rt2: "1440 / 324", vl: "4 / 3", rd: "4 / 3", real: "16 / 9"}[box.dataset.bench];
+  vid.style.objectFit = "contain";
   const cap = el("div", "cb-cap"), ctl = el("div", "cb-ctl",
     `<button class="icon" data-a="prev" aria-label="previous">‹</button><button class="icon" data-a="pp" aria-label="Play video">▶</button><button class="icon" data-a="next" aria-label="next">›</button><input type="range" min="0" max="1000" value="0"><span class="mono">0.0 / 0.0 s</span>`);
   main.append(vid, cap, ctl);
   wrap.append(main, side);
   box.append(top, wrap);
+  // the thumbnail column beside a wide player ends where the player ends
+  if (box.classList.contains("wide")) new ResizeObserver(() => box.style.setProperty("--cbh", main.offsetHeight + "px")).observe(main);
   const [bp, bpp, bn, sc, tl] = [$("[data-a=prev]", ctl), $("[data-a=pp]", ctl), $("[data-a=next]", ctl), $("input", ctl), $(".mono", ctl)];
   function load(i) {
     cur = (i + list.length) % list.length;
@@ -560,9 +581,10 @@ $$(".cases").forEach(box => {
     cap.innerHTML = `<span><b>${c.task}</b>${c.instr ? " · " + (c.bench === "rt2" || c.bench === "vl" ? `<span class="instr">“${c.instr}”</span>` : c.instr) : ""}${c.tag ? ` · ${c.tag}` : ""}</span><span>${okm} · ${c.speed}</span>`;
     count.textContent = `${cur + 1} / ${list.length}`;
     const b = $$("button", side)[cur];           // scroll only the thumbnail list, never the page
-    if (b && side.scrollHeight > side.clientHeight) {
-      const top = b.offsetTop - side.offsetTop;
-      if (top < side.scrollTop || top + b.offsetHeight > side.scrollTop + side.clientHeight) side.scrollTop = top - 8;
+    if (b) {
+      const s = side.getBoundingClientRect(), r = b.getBoundingClientRect();
+      if (side.scrollHeight > side.clientHeight && (r.top < s.top || r.bottom > s.bottom)) side.scrollTop += r.top - s.top - 8;
+      if (side.scrollWidth > side.clientWidth && (r.left < s.left || r.right > s.right)) side.scrollLeft += r.left - s.left - 8;
     }
   }
   function fill(i) {

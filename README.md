@@ -16,10 +16,10 @@ Gnomon4D/
 ├── README.md
 ├── .gitignore
 └── assets/
-    ├── app.js                 # Players, charts, tabs, and gallery interactions
+    ├── app.js                 # Players, charts, reading navigation, theme switch and gallery
     ├── data.js                # Demo metadata, chapter timestamps, and chart data
     ├── sundial.js             # Interactive sundial
-    ├── style.css              # Layout and styling
+    ├── style.css              # Layout, light and dark themes
     ├── Gnomon4D_supp.vtt       # English video subtitles
     ├── media/                 # Main video, demo clips, and preview images
     ├── fig/                   # Research figures
@@ -39,7 +39,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Press `Ctrl+C` to stop the server.
 
-The site uses plain HTML, CSS, and JavaScript. No dependency installation or build step is required. The main overview starts when the reader presses play. Short demos play muted when visible; automatic playback releases video sources offscreen or in background tabs to cancel unnecessary downloads. Gallery downloads are queued, with up to four in progress on desktop, two on narrow screens, or one when the browser reports a slow connection. Buffered visible clips continue playing together. The method diagram's three streams remain synchronized. Readers can also pause clips manually.
+The site uses plain HTML, CSS, and JavaScript. No dependency installation or build step is required. The page opens on a cover and reads top to bottom as one article: an overview, the video, then Motivation, Method, Results and Gallery, each split into numbered blocks that are all expanded. A contents rail on wide screens and a progress bar track the reading position. The light theme is the default; the theme button in the top bar switches to dark and the choice is remembered. The main overview starts when the reader presses play. Short demos play muted when visible; automatic playback releases video sources offscreen or in background tabs to cancel unnecessary downloads. Gallery downloads are queued, with up to four in progress on desktop, two on narrow screens, or one when the browser reports a slow connection. Buffered visible clips continue playing together. The method diagram's three streams remain synchronized. Readers can also pause clips manually.
 
 ## GitHub Pages deployment
 
