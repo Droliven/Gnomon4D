@@ -82,7 +82,7 @@
       <radialGradient id="${uid}sun"><stop offset="0" stop-color="rgb(255,222,160)" stop-opacity=".75"/><stop offset=".25" stop-color="rgb(255,190,110)" stop-opacity=".32"/><stop offset="1" stop-color="rgb(130,70,60)" stop-opacity="0"/></radialGradient>
       <radialGradient id="${uid}face" cx=".45" cy=".42" r=".7"><stop offset="0" stop-color="rgb(246,240,228)"/><stop offset=".8" stop-color="rgb(236,228,214)"/><stop offset="1" stop-color="rgb(222,212,196)"/></radialGradient>
       <linearGradient id="${uid}edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgb(214,205,190)"/><stop offset="1" stop-color="rgb(120,110,100)"/></linearGradient>
-      <radialGradient id="${uid}bg" cx=".7" cy=".2" r="1"><stop offset="0" stop-color="#2b2350"/><stop offset="1" stop-color="#0d0f24"/></radialGradient>
+      <radialGradient id="${uid}bg" cx=".7" cy=".2" r="1"><stop offset="0" stop-color="#2b2350" style="stop-color: var(--dial-bg0, #2b2350)"/><stop offset="1" stop-color="#0d0f24" style="stop-color: var(--dial-bg1, #0d0f24)"/></radialGradient>
       <filter id="${uid}blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${mini ? 0.6 : 2.2}"/></filter>
       <filter id="${uid}soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${mini ? 1 : 9}"/></filter>`;
 

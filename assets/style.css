@@ -18,6 +18,7 @@
   --blue: #4656c2; --ok: #1f9d5c; --bad: #cf443d; --badline: rgba(207, 68, 61, .4);
   --soft: rgba(30, 28, 60, .03); --track: rgba(30, 28, 60, .08); --bar: #a9adc6;
   --canvas: #f2eee6; --canvas-ink: #8a8da3;
+  --dial-bg0: #fcecc9; --dial-bg1: #d99a3a;
   --topbar: rgba(247, 244, 238, .82); --panel: rgba(255, 253, 249, .72);
   --card-shadow: 0 1px 2px rgba(40, 30, 10, .04), 0 14px 36px -22px rgba(40, 30, 10, .22);
   --big-shadow: 0 30px 80px -40px rgba(40, 30, 10, .38);
@@ -35,6 +36,7 @@
   --blue: #8ea2ff; --ok: #4fd18b; --bad: #ef6a6a; --badline: rgba(239, 106, 106, .4);
   --soft: rgba(255, 255, 255, .03); --track: rgba(255, 255, 255, .06); --bar: #646a90;
   --canvas: #05060e; --canvas-ink: #a2a7c4;
+  --dial-bg0: #2b2350; --dial-bg1: #0d0f24;
   --topbar: rgba(10, 12, 27, .74); --panel: rgba(10, 12, 30, .55);
   --card-shadow: none; --big-shadow: 0 40px 120px -40px rgba(0, 0, 0, .8);
   --wash:

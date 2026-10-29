@@ -14,6 +14,7 @@ $("#themeBtn").addEventListener("click", () => {
   const next = root.dataset.theme === "dark" ? "light" : "dark";
   root.dataset.theme = next;
   try { localStorage.setItem("g4-theme", next); } catch (e) {}
+  setIconTheme(next);
   readTheme();
   document.dispatchEvent(new Event("themechange"));
 });

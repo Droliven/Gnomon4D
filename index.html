@@ -4,9 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gnomon4D: Learning Where and When to Focus for Geometric Motion-Grounded World-Action Modeling</title>
-<script>try { document.documentElement.dataset.theme = localStorage.getItem("g4-theme") || "light"; } catch (e) {}</script>
-<link rel="icon" type="image/svg+xml" href="assets/icon/favicon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/icon/icon-32.png">
+<link rel="icon" type="image/svg+xml" href="assets/icon/favicon-light.svg" id="favSvg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon/icon-32-light.png" id="favPng">
+<script>
+  // theme before first paint; the tab icon follows the page theme
+  window.setIconTheme = t => {
+    const s = t === "dark" ? "" : "-light";
+    document.getElementById("favSvg").href = `assets/icon/favicon${s}.svg`;
+    document.getElementById("favPng").href = `assets/icon/icon-32${s}.png`;
+  };
+  try { document.documentElement.dataset.theme = localStorage.getItem("g4-theme") || "light"; } catch (e) {}
+  setIconTheme(document.documentElement.dataset.theme);
+</script>
 <link rel="apple-touch-icon" href="assets/icon/icon-180.png">
 <link rel="stylesheet" href="assets/katex/katex.min.css">
 <link rel="stylesheet" href="assets/style.css">
