@@ -5,6 +5,16 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 const visible = new WeakMap();      // element -> currently in view
+const interleave = (arr, key) => {  // round-robin over key(c), first-seen key order
+  const b = new Map(); arr.forEach(c => { const k = key(c); if (!b.has(k)) b.set(k, []); b.get(k).push(c); });
+  const q = [...b.values()], out = [];
+  for (let i = 0; out.length < arr.length; i++) q.forEach(l => { if (i < l.length) out.push(l[i]); });
+  return out;
+};
+// real-robot trials: every visual shift and every task show up within the first few entries
+const SHIFT = ["In distribution", "OOD · Distractors", "OOD · Appearance", "OOD · Tablecloth", "OOD · Lighting"];
+const realOrder = cs => interleave(SHIFT.flatMap(s => interleave(cs.filter(c => c.instr === s), c => c.task)), c => c.instr);
+const shiftLabel = c => c.bench === "real" && c.group === "ood" ? " · " + c.instr.replace("OOD · ", "") : "";
 
 // ---------------------------------------------------------------- color theme: light by default, the reader's choice is remembered
 const root = document.documentElement, COL = {};
@@ -544,11 +554,12 @@ steps[0].classList.add("on");
 })();
 
 // ---------------------------------------------------------------- bar charts
-const vbars = (node, groups, series, max, delta) => {
+const vbars = (node, groups, series, max, delta, values) => {
   const g = el("div", "vgroup"), lab = el("div", "vlabels"), key = el("div", "vkey");
+  if (values) node.classList.add("vals");
   groups.forEach((name, i) => {
     const col = el("div", "vg");
-    series.forEach(s => col.appendChild(el("div", "b" + (s.ours ? " o" : ""), "")).dataset.h = s.vals[i] / max * 100);
+    series.forEach(s => { const b = col.appendChild(el("div", "b" + (s.ours ? " o" : ""), "")); b.dataset.h = s.vals[i] / max * 100; b.dataset.v = s.vals[i].toFixed(1); });
     if (delta) { const d = series[1].vals[i] - series[0].vals[i]; col.appendChild(el("div", "d", (d >= 0 ? "+" : "") + d.toFixed(1))); }
     $$(".b", col).forEach((b, k) => b.title = `${series[k].name}: ${series[k].vals[i]}`);
     g.appendChild(col); lab.appendChild(el("span", "", name));
@@ -561,7 +572,7 @@ const vbars = (node, groups, series, max, delta) => {
 vbars($("#vlbars"), ["ID", "Cat", "CS", "Ins", "Tex", "Avg."],
   [{name: "OpenWAM-Alpha", vals: [83.4, 38.1, 58.0, 53.8, 61.4, 58.9]}, {name: "Gnomon4D", vals: [84.0, 39.1, 61.7, 59.1, 68.8, 62.5], ours: 1}], 100, true);
 vbars($("#realbars"), ["In distribution", "Visual shifts"],
-  [{name: "Fast-WAM", vals: [58.5, 47.0]}, {name: "X-WAM", vals: [68.5, 62.0]}, {name: "FlowWAM", vals: [75.5, 61.0]}, {name: "Gnomon4D", vals: [82.5, 78.0], ours: 1}], 100, false);
+  [{name: "Fast-WAM", vals: [58.5, 47.0]}, {name: "X-WAM", vals: [68.5, 62.0]}, {name: "FlowWAM", vals: [75.5, 61.0]}, {name: "Gnomon4D", vals: [82.5, 78.0], ours: 1}], 100, false, true);
 
 // count-up on the stat cards
 $$("[data-count]").forEach(n => {
@@ -574,8 +585,9 @@ $$("[data-count]").forEach(n => {
 
 // ---------------------------------------------------------------- case browsers
 $$(".cases").forEach(box => {
-  const all = P.cases.filter(c => c.bench === box.dataset.bench);
+  let all = P.cases.filter(c => c.bench === box.dataset.bench);
   if (!all.length) return;
+  if (box.dataset.bench === "real") all = realOrder(all);
   const groups = box.dataset.groups ? box.dataset.groups.split(",").map(s => s.split(":")) : [];
   const heads = box.dataset.heads ? box.dataset.heads.split("|") : [];
   let group = groups.length ? groups[0][0] : "all", list = [], cur = 0;
@@ -626,7 +638,7 @@ $$(".cases").forEach(box => {
     list = all.filter(c => group === "all" || c.group === group);
     side.innerHTML = "";
     list.forEach((c, k) => {
-      const b = el("button", "", `<img loading="lazy" src="${c.thumb}" alt=""><span>${c.task}${c.bench === "real" && c.group === "ood" ? " · " + c.instr.replace("OOD · ", "") : ""}${c.group === "tex" ? " · unseen texture" : ""}</span>${c.ok ? "" : `<em class="bad">✕</em>`}`);
+      const b = el("button", "", `<img loading="lazy" src="${c.thumb}" alt=""><span>${c.task}${shiftLabel(c)}${c.group === "tex" ? " · unseen texture" : ""}</span>${c.ok ? "" : `<em class="bad">✕</em>`}`);
       b.addEventListener("click", () => load(k));
       side.appendChild(b);
     });
@@ -656,8 +668,7 @@ $$(".cases").forEach(box => {
   const by = {rt2: [], real: [], rd: [], vl: []};
   P.cases.forEach(c => { if (c.ok) by[c.bench].push(c); });
   by.rt2.sort((a, b) => (a.group === "random" ? 0 : 1) - (b.group === "random" ? 0 : 1));
-  const num = c => +(c.src.match(/_(\d+)(_[a-z]+)?\.mp4$/) || [0, 0])[1];
-  by.real.sort((a, b) => num(a) - num(b));          // one trial of every task before the next round
+  by.real = realOrder(by.real);
   const items = [], pat = ["rt2", "real", "rt2", "rd", "vl"], pos = {rt2: 0, real: 0, rd: 0, vl: 0};
   while (Object.keys(by).some(b => pos[b] < by[b].length)) pat.forEach(b => { if (pos[b] < by[b].length) items.push(by[b][pos[b]++]); });
   let g = "all", n = 16;
@@ -666,7 +677,7 @@ $$(".cases").forEach(box => {
     wall.innerHTML = "";
     const list = items.filter(c => g === "all" || c.bench === g);
     list.slice(0, n).forEach(c => {
-      const f = el("figure", c.bench, `<video muted loop playsinline preload="none" poster="${c.thumb}" data-src="${c.src}"></video><figcaption><span>${NAMES[c.bench]} · ${c.task}${c.group === "tex" ? " · unseen texture" : ""}</span><em>${c.speed}</em></figcaption>`);
+      const f = el("figure", c.bench, `<video muted loop playsinline preload="none" poster="${c.thumb}" data-src="${c.src}"></video><figcaption><span>${NAMES[c.bench]} · ${c.task}${shiftLabel(c)}${c.group === "tex" ? " · unseen texture" : ""}</span><em>${c.speed}</em></figcaption>`);
       wall.appendChild(f); watch($("video", f));
     });
     more.style.display = list.length > n ? "" : "none";
