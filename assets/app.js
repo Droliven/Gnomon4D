@@ -241,11 +241,29 @@ Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
 
 // ---------------------------------------------------------------- GeoDelta in three domains
 (() => {
-  const box = $("#gdDom");
-  P.gd.forEach(d => {
-    const f = el("figure", "", `<div class="tri-head two"><span>${d.name}</span><span class="g">GeoDelta, t → t+4</span></div><video class="demo-video" data-src="${d.src}" poster="${d.src.replace(".mp4", ".jpg")}" muted loop playsinline></video><figcaption>${d.task} · ${d.how}</figcaption>`);
-    box.appendChild(f); watch($("video", f));
+  // one three-view player; the domains follow each other, a click holds one
+  const box = $("#gdDom"), seg = el("div", "seg");
+  const f = el("figure", "", `<div class="tri-head"><span>RGB</span><span class="g">GeoDelta · point tracks, t → t+4</span><span class="g">GeoDelta · encoded video</span></div><video muted loop playsinline></video><figcaption></figcaption>`);
+  const vid = $("video", f), cap = $("figcaption", f);
+  vid.style.aspectRatio = "1440 / 360";
+  box.append(seg, f);
+  watch(vid);
+  let cur = 0, held = false, lastT = 0;
+  const show = i => {
+    cur = i;
+    const d = P.gd[i];
+    $$("button", seg).forEach((b, k) => b.classList.toggle("on", k === i));
+    pauseAuto(vid); autoVideos.get(vid).userPaused = false; releaseAuto(vid);
+    vid.poster = d.src.replace(".mp4", ".jpg"); vid.dataset.src = d.src; lastT = 0;
+    cap.innerHTML = `<span><b>${d.name}</b> · ${d.task}</span><span>motion from ${d.how}</span>`;
+    queueVideos();
+  };
+  P.gd.forEach((d, i) => { const b = el("button", "", d.name); b.addEventListener("click", () => { held = true; show(i); }); seg.appendChild(b); });
+  vid.addEventListener("timeupdate", () => {
+    if (!held && vid.currentTime + 1 < lastT) show((cur + 1) % P.gd.length);
+    else lastT = vid.currentTime;
   });
+  show(0);
 })();
 
 // ---------------------------------------------------------------- film chapters
