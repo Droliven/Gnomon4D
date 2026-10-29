@@ -415,10 +415,29 @@
   <!-- Real robot -->
   <div class="blk" id="real" data-toc="3.4 Real robot">
     <div class="blk-head res"><span class="blk-n">3.4</span><h3>Real robot: first on every task, <i>in and out of distribution.</i></h3><p class="key"><b>82.5</b> / <b>78.0</b>% ID / OOD</p></div>
+    <p class="sub-t">Setup</p>
+    <div class="split res-split setup">
+      <div>
+        <p class="prose">A UR5e arm with a parallel gripper, a fixed third-person RGB-D camera and a wrist camera. Five tasks cover routine, long-horizon and precision manipulation. All methods are trained on the same 50 demonstrations per task and evaluated from shared initial configurations.</p>
+        <dl class="spec">
+          <dt>Tasks</dt><dd><b>Routine</b> Drawer Storage, Box Packing, Block Stacking · <b>Long-horizon</b> Color Sorting · <b>Precision</b> Charger Insertion</dd>
+          <dt>Demonstrations</dt><dd>50 per task in freedrive mode; object and container placements vary within a 30×30 cm region</dd>
+          <dt>Trials</dt><dd>80 per task and method: 40 in distribution, 40 under visual shifts, 10 for each of four factors</dd>
+          <dt>Control</dt><dd>32-step action chunk on a 10 Hz grid; the first 16 steps run before replanning</dd>
+        </dl>
+        <div class="ood4">
+          <p><b>Lighting</b>colored side illumination on the objects and workspace</p>
+          <p><b>Tablecloth</b>an unseen green plaid tablecloth</p>
+          <p><b>Appearance</b>unseen object appearance, such as new block colors</p>
+          <p><b>Distractors</b>additional non-target objects in the workspace</p>
+        </div>
+      </div>
+      <figure class="paperfig"><img loading="lazy" src="assets/fig/real_setup.jpg" alt="Real-robot setup" data-zoom></figure>
+    </div>
+    <p class="sub-t">Results</p>
     <div class="split res-split">
       <div>
-        <p class="prose">A UR5e arm with a parallel gripper, a fixed third-person RGB-D camera and a wrist camera. Five tasks, 50 demonstrations each. Every method runs 80 trials per task from shared initial configurations: 40 in distribution and 40 under unseen lighting, tablecloth, object appearance or added distractors (10 each).</p>
-        <p class="prose">The baselines trade accuracy for robustness: FlowWAM leads them in distribution but loses 14.5 points under shifts. Gnomon4D loses 4.5, and its margin over the SOTA baseline widens from 7.0 to 16.0 points.</p>
+        <p class="prose">The baselines trade accuracy for robustness: FlowWAM leads them in distribution but loses 14.5 points under shifts. Gnomon4D loses 4.5, and its margin over the SOTA baseline widens from 7.0 to 16.0 points. The OOD gain is largest under unseen object appearance and distractors (18.0 points each), which leave GeoDelta unchanged: it does not depend on texture, and a static distractor contributes no motion.</p>
         <div class="vbars short" id="realbars"></div>
       </div>
       <div>
@@ -426,8 +445,7 @@
         <p class="note">Trials filmed with a phone camera, ×4. Labels give the visual shift of each OOD trial.</p>
       </div>
     </div>
-    <div class="real-row">
-      <figure class="paperfig"><img loading="lazy" src="assets/fig/real_setup.jpg" alt="Real-robot setup" data-zoom></figure>
+    <div class="cols2 real-tabs">
       <table class="t compact">
         <tr><th>Task · ID / OOD of 40</th><th>Fast-WAM</th><th>X-WAM</th><th>FlowWAM</th><th>Gnomon4D</th></tr>
         <tr><td>Drawer Storage</td><td>32 / 26</td><td>33 / 31</td><td>34 / 32</td><td class="o">36 / 35</td></tr>
