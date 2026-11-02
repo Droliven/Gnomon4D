@@ -27,7 +27,8 @@ Gnomon4D/
     ├── fonts/                 # Website fonts
     ├── katex/                 # Local equation renderer and its fonts
     ├── vendor/                # hls.js light build (Apache-2.0) for the main video
-    └── icon/                  # Website icons
+    ├── icon/                  # Website icons
+    └── logo/                  # Affiliation logos on the cover
 ```
 
 ## Local preview
