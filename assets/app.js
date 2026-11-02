@@ -32,6 +32,21 @@ $("#themeBtn").addEventListener("click", () => {
 // ---------------------------------------------------------------- formulas
 renderMathInElement(document.body, {delimiters: [{left: "$$", right: "$$", display: true}, {left: "\\(", right: "\\)", display: false}], throwOnError: false});
 
+// ---------------------------------------------------------------- video posters load a screen ahead, so the cover gets the bandwidth first
+const posterIO = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  const v = e.target;
+  v.dataset.near = "1";
+  if (v.dataset.poster) { v.poster = v.dataset.poster; delete v.dataset.poster; }
+  posterIO.unobserve(v);
+}), {rootMargin: "100% 0px"});
+function setPoster(v, url) {
+  if (v.dataset.near) { v.poster = url; return; }
+  v.dataset.poster = url;
+  posterIO.observe(v);
+}
+$$("video[data-poster]").forEach(v => posterIO.observe(v));
+
 // ---------------------------------------------------------------- short videos: visible playback, bounded gallery downloads
 const autoVideos = new Map();
 const connection = navigator.connection;
@@ -131,7 +146,7 @@ function watch(v, {controls = true, observe = true} = {}) {
   if (observe) { vio.observe(v); nio.observe(v); }
 }
 function unwatch(v) {
-  releaseAuto(v); autoVideos.delete(v); wantedVideos.delete(v); vio.unobserve(v); nio.unobserve(v);
+  releaseAuto(v); autoVideos.delete(v); wantedVideos.delete(v); vio.unobserve(v); nio.unobserve(v); posterIO.unobserve(v);
 }
 document.addEventListener("visibilitychange", updateVideos);
 window.addEventListener("resize", queueVideos, {passive: true});
@@ -194,10 +209,6 @@ const lb = $("#lightbox");
 $$("[data-zoom]").forEach(img => img.addEventListener("click", () => { $("img", lb).src = img.src; lb.classList.add("on"); }));
 lb.addEventListener("click", () => lb.classList.remove("on"));
 document.addEventListener("keydown", e => { if (e.key === "Escape") lb.classList.remove("on"); });
-
-// ---------------------------------------------------------------- sundials: hero and brand
-Sundial.mount($("#heroDial"), {mode: "hero", hour: 9});
-Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
 
 // ---------------------------------------------------------------- method diagram
 (() => {
@@ -289,7 +300,7 @@ Sundial.mount($("#brandDial"), {mode: "mini", hour: 10});
     const d = P.gd[i];
     $$("button", seg).forEach((b, k) => b.classList.toggle("on", k === i));
     pauseAuto(vid); autoVideos.get(vid).userPaused = false; releaseAuto(vid);
-    vid.poster = d.src.replace(".mp4", ".jpg"); vid.dataset.src = d.src; lastT = 0;
+    setPoster(vid, d.src.replace(".mp4", ".jpg")); vid.dataset.src = d.src; lastT = 0;
     cap.innerHTML = `<span><b>${d.name}</b> · ${d.task}</span><span>motion from ${d.how}</span>`;
     queueVideos();
   };
@@ -580,7 +591,7 @@ steps[0].classList.add("on");
   const set = p => {
     pauseAuto(vid);
     autoVideos.get(vid).userPaused = false;
-    vid.poster = p.src.replace(".mp4", ".jpg");
+    setPoster(vid, p.src.replace(".mp4", ".jpg"));
     releaseAuto(vid);
     vid.dataset.src = p.src;
     queueVideos();
@@ -666,7 +677,7 @@ $$(".cases").forEach(box => {
     const c = list[cur];
     pauseAuto(vid);
     autoVideos.get(vid).userPaused = false;
-    vid.poster = c.thumb;
+    setPoster(vid, c.thumb);
     releaseAuto(vid);
     vid.dataset.src = c.src;
     sc.value = 0; tl.textContent = "0.0 / 0.0 s";
@@ -726,8 +737,8 @@ $$(".cases").forEach(box => {
     wall.innerHTML = "";
     const list = items.filter(c => g === "all" || c.bench === g);
     list.slice(0, n).forEach(c => {
-      const f = el("figure", c.bench, `<video muted loop playsinline preload="none" poster="${c.thumb}" data-src="${c.src}"></video><figcaption><span>${NAMES[c.bench]} · ${c.task}${shiftLabel(c)}${c.group === "tex" ? " · unseen texture" : ""}</span><em>${c.speed}</em></figcaption>`);
-      wall.appendChild(f); watch($("video", f));
+      const f = el("figure", c.bench, `<video muted loop playsinline preload="none" data-poster="${c.thumb}" data-src="${c.src}"></video><figcaption><span>${NAMES[c.bench]} · ${c.task}${shiftLabel(c)}${c.group === "tex" ? " · unseen texture" : ""}</span><em>${c.speed}</em></figcaption>`);
+      wall.appendChild(f); watch($("video", f)); posterIO.observe($("video", f));
     });
     more.style.display = list.length > n ? "" : "none";
   }

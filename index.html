@@ -17,8 +17,11 @@
   setIconTheme(document.documentElement.dataset.theme);
 </script>
 <link rel="apple-touch-icon" href="assets/icon/icon-180.png">
+<link rel="preload" href="assets/fonts/Fraunces-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Fraunces-Italic-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/katex/katex.min.css">
-<link rel="stylesheet" href="assets/style.css?v=1102f">
+<link rel="stylesheet" href="assets/style.css?v=1102i">
 </head>
 <body>
 
@@ -57,12 +60,12 @@
           <span><a href="https://scholar.google.com/citations?user=n6e_2IgAAAAJ" target="_blank" rel="noopener">Qingyao Wu</a><sup>1‡</sup></span>
         </p>
         <p class="affils">
-          <span><img src="assets/logo/scut.jpg" alt="" width="22" height="22"><sup>1</sup>South China University of Technology</span>
-          <span><img src="assets/logo/tsinghua.png" alt="" width="22" height="22"><sup>2</sup>Tsinghua University</span>
-          <span><img src="assets/logo/kling.png" alt="" width="22" height="22"><sup>3</sup>KlingAI Research</span>
-          <span><img src="assets/logo/nju.png" alt="" width="22" height="22"><sup>4</sup>Nanjing University</span>
-          <span><img src="assets/logo/bnu.png" alt="" width="22" height="22"><sup>5</sup>Beijing Normal University</span>
-          <span><img class="wide" src="assets/logo/shadowai.png" alt="" width="60" height="24"><sup>6</sup>Shadow AI</span>
+          <span><img fetchpriority="high" src="assets/logo/scut.jpg" alt="" width="22" height="22"><sup>1</sup>South China University of Technology</span>
+          <span><img fetchpriority="high" src="assets/logo/tsinghua.png" alt="" width="22" height="22"><sup>2</sup>Tsinghua University</span>
+          <span><img fetchpriority="high" src="assets/logo/kling.png" alt="" width="22" height="22"><sup>3</sup>KlingAI Research</span>
+          <span><img fetchpriority="high" src="assets/logo/nju.png" alt="" width="22" height="22"><sup>4</sup>Nanjing University</span>
+          <span><img fetchpriority="high" src="assets/logo/bnu.png" alt="" width="22" height="22"><sup>5</sup>Beijing Normal University</span>
+          <span><img class="wide" fetchpriority="high" src="assets/logo/shadowai.png" alt="" width="60" height="24"><sup>6</sup>Shadow AI</span>
         </p>
         <p class="notes">
           <span><sup>*</sup>Work done during an internship at KlingAI Research</span>
@@ -106,7 +109,7 @@
   </div>
   <figure class="triple ov-demo">
     <div class="tri-head"><span>Observation</span><span class="g">Future video</span><span class="g">Future GeoDelta</span></div>
-    <video class="demo-video" controls preload="none" data-src="assets/media/demo/lift_pot.mp4" poster="assets/media/demo/lift_pot.jpg" muted loop playsinline></video>
+    <video class="demo-video" controls preload="none" data-src="assets/media/demo/lift_pot.mp4" data-poster="assets/media/demo/lift_pot.jpg" muted loop playsinline></video>
     <figcaption><span class="instr">“Grab the round kitchenpot with handles and lift together.”</span><span>RoboTwin 2.0 demonstration, ground truth · the future is 24 control steps ahead</span></figcaption>
   </figure>
 </section>
@@ -116,7 +119,7 @@
   <p class="eyebrow">The video</p>
   <h2>The whole story <i>in under six minutes.</i></h2>
   <div class="film">
-    <video id="film" controls preload="none" playsinline poster="assets/media/film_poster.jpg?v=1029g" data-hls="assets/media/film41b/master.m3u8">
+    <video id="film" controls preload="none" playsinline data-poster="assets/media/film_poster.jpg?v=1029g" data-hls="assets/media/film41b/master.m3u8">
       <track kind="subtitles" srclang="en" label="English" src="assets/Gnomon4D_supp.vtt?v=1029g">
     </video>
   </div>
@@ -178,7 +181,7 @@
     </div>
     <div class="relation card">
       <div class="tri-head two"><span>RGB · active object outlined</span><span class="g">GeoDelta</span></div>
-      <video id="relVid" class="demo-video" controls preload="none" data-src="assets/media/demo/relation.mp4" poster="assets/media/demo/relation.jpg" muted loop playsinline></video>
+      <video id="relVid" class="demo-video" controls preload="none" data-src="assets/media/demo/relation.mp4" data-poster="assets/media/demo/relation.jpg" muted loop playsinline></video>
       <svg id="relChart" viewBox="0 0 1000 190"></svg>
       <div class="legend"><span class="lg c"></span>relative motion c <span class="lg r"></span>its change r = |Δc| <span class="tagc" id="relState"></span></div>
       <p class="note">Computed from the ground-truth GeoDelta of a RoboTwin 2.0 demonstration (Stack Blocks Two). Section 2.2 defines c and r; in the model they come from the predicted motion.</p>
@@ -203,7 +206,7 @@
 
   <figure class="pipe" id="pipe">
     <div class="p-col p-in">
-      <div class="p-box" data-w="obs"><p class="p-tag">Observation</p><video class="demo-video" controls preload="none" id="pipeObs" data-src="assets/media/pipe/obs.mp4" poster="assets/media/pipe/obs.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-w="obs"><p class="p-tag">Observation</p><video class="demo-video" controls preload="none" id="pipeObs" data-src="assets/media/pipe/obs.mp4" data-poster="assets/media/pipe/obs.jpg" muted loop playsinline></video></div>
       <div class="p-box p-instr" data-w="ins"><p class="p-tag">Instruction</p><p id="pipeInstr"></p><p class="p-plus">+ depth, foreground mask, proprioception</p></div>
       <div class="p-box p-human" data-c="3" data-w="hum"><span class="num">3</span><p class="p-tag">Pretraining</p><p>5,000+ h human video, then 30+ h robot video</p></div>
     </div>
@@ -215,8 +218,8 @@
       <p class="ja-lab">joint attention</p>
     </div>
     <div class="p-col p-out">
-      <div class="p-box" data-w="ov"><p class="p-tag">Future video</p><video class="sync" data-src="assets/media/pipe/vid.mp4" poster="assets/media/pipe/vid.jpg" muted loop playsinline></video></div>
-      <div class="p-box" data-c="1" data-w="og"><p class="p-tag g">Future GeoDelta</p><video class="sync" data-src="assets/media/pipe/gd.mp4" poster="assets/media/pipe/gd.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-w="ov"><p class="p-tag">Future video</p><video class="sync" data-src="assets/media/pipe/vid.mp4" data-poster="assets/media/pipe/vid.jpg" muted loop playsinline></video></div>
+      <div class="p-box" data-c="1" data-w="og"><p class="p-tag g">Future GeoDelta</p><video class="sync" data-src="assets/media/pipe/gd.mp4" data-poster="assets/media/pipe/gd.jpg" muted loop playsinline></video></div>
       <div class="p-box" data-w="oa"><p class="p-tag">Action chunk</p><canvas id="pipeAct" width="480" height="150"></canvas></div>
     </div>
     <svg class="p-wires" id="pipeWires" aria-hidden="true"></svg>
@@ -241,7 +244,7 @@
         <li data-t="11.5"><b>Take the difference</b><span>image-plane displacement and depth change</span></li>
       </ol>
     </div>
-    <figure class="media-card"><video id="construct" class="demo-video" controls preload="none" data-src="assets/media/demo/construct.mp4" poster="assets/media/demo/construct.jpg" muted loop playsinline></video></figure>
+    <figure class="media-card"><video id="construct" class="demo-video" controls preload="none" data-src="assets/media/demo/construct.mp4" data-poster="assets/media/demo/construct.jpg" muted loop playsinline></video></figure>
   </div>
 
   <div class="blk sub-blk" id="m1-why">
@@ -249,7 +252,7 @@
     <p class="blk-lede">RGB mixes motion with texture, lighting and background. Depth adds geometry, but one frame at a time: it shows where surfaces are, not which point went where. Every GeoDelta value links two moments of the same physical point.</p>
     <figure class="triple">
       <div class="tri-head"><span>RGB</span><span>Depth</span><span class="g">GeoDelta</span></div>
-      <video class="demo-video" controls preload="none" data-src="assets/media/demo/repr.mp4" poster="assets/media/demo/repr.jpg" muted loop playsinline></video>
+      <video class="demo-video" controls preload="none" data-src="assets/media/demo/repr.mp4" data-poster="assets/media/demo/repr.jpg" muted loop playsinline></video>
       <div class="tri-foot"><span>appearance and motion entangled</span><span>no correspondence across time</span><span>where the same point moves, in 3D</span></div>
     </figure>
     <div class="defrow">
@@ -283,12 +286,12 @@
     <p class="blk-lede">Joint attention sees every future token but not which ones matter. Interaction-Salient Attention (InSAttn) reads where object and embodiment motion differ: while the gripper approaches, the block stays still and the relative motion c is high; once grasped they move together and c drops. Transition-Anchored Aggregation (TransAgg) weights frames by how much c changes, so grasp and release dominate the readout given to the Action expert.</p>
     <div class="cols2 eqcards">
       <div class="card"><p class="tag">Where · Interaction-Salient Attention</p>
-        <video class="demo-video eq-clip" controls preload="none" data-src="assets/media/readout/where.mp4" poster="assets/media/readout/where.jpg" muted loop playsinline></video>
+        <video class="demo-video eq-clip" controls preload="none" data-src="assets/media/readout/where.mp4" data-poster="assets/media/readout/where.jpg" muted loop playsinline></video>
         <div class="eq">$$c_{n,i}=\frac{\|\boldsymbol\delta_{n,i}-\bar{\boldsymbol\delta}^{\mathrm e}_{n,i}\|}{\|\boldsymbol\delta_{n,i}\|+\|\bar{\boldsymbol\delta}^{\mathrm e}_{n,i}\|+\varepsilon}$$</div>
         <div class="eq small">$$s_{n,i}=\operatorname{softmax}_i\big(\phi(c_{n,i};\ell,\mathbf s_0)+\log(\rho^{\mathrm e}_{n,i}+\rho^{\mathrm o}_{n,i})\big)$$</div>
         <p>c is near 1 where object and embodiment move relative to each other and near 0 where they move together. A small MLP scores each token from c given the instruction and proprioception, and the saliency s reweights each query's attention within a frame.</p></div>
       <div class="card"><p class="tag">When · Transition-Anchored Aggregation</p>
-        <video class="demo-video eq-clip" controls preload="none" data-src="assets/media/readout/when.mp4" poster="assets/media/readout/when.jpg" muted loop playsinline></video>
+        <video class="demo-video eq-clip" controls preload="none" data-src="assets/media/readout/when.mp4" data-poster="assets/media/readout/when.jpg" muted loop playsinline></video>
         <div class="eq">$$r_n=\sum_i s_{n,i}\,|\Delta c_{n,i}|$$</div>
         <div class="eq small">$$\mathbf z_k=\sum_n\operatorname{softmax}_n\big(\mathbf q_k^{\top}\mathbf y_{k,n}+\log r_n\big)\,\mathbf y_{k,n}$$</div>
         <p>Each of the K = 32 queries pools its per-frame readouts over time, weighted by how much c changes on salient tokens, so grasp and release frames dominate. The resulting tokens enter the Action expert through residual cross-attention.</p></div>
@@ -551,10 +554,15 @@
 
 <div class="lightbox" id="lightbox"><img alt=""><button aria-label="close">×</button></div>
 
+<script src="assets/sundial.js?v=1102a"></script>
+<script>
+  // the dials draw as soon as their own script arrives, ahead of the larger scripts below
+  Sundial.mount(document.getElementById("heroDial"), {mode: "hero", hour: 9});
+  Sundial.mount(document.getElementById("brandDial"), {mode: "mini", hour: 10});
+</script>
 <script src="assets/katex/katex.min.js"></script>
 <script src="assets/katex/auto-render.min.js"></script>
 <script src="assets/data.js?v=1029g"></script>
-<script src="assets/sundial.js?v=1029g"></script>
-<script src="assets/app.js?v=1029g"></script>
+<script src="assets/app.js?v=1102a"></script>
 </body>
 </html>
