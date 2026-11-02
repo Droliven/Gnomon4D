@@ -2,7 +2,25 @@
 
 **Learning Where and When to Focus for Geometric Motion-Grounded World-Action Modeling**
 
-![Gnomon4D](assets/media/film_poster.jpg)
+[Lingwei Dang](https://droliven.github.io/me/)<sup>1,2,3&#42;</sup>,
+[Yan Zhou](https://openreview.net/profile?id=~Zhou_Yan1)<sup>3</sup>,
+[Juntong Li](https://scholar.google.com/citations?user=2_WmrJYAAAAJ)<sup>1</sup>,
+[Zhenhao Zhang](https://scholar.google.com/citations?user=dV36HmYAAAAJ)<sup>2,3&#42;</sup>,
+[Yiteng Chen](https://openreview.net/profile?id=~Yiteng_Chen1)<sup>1</sup>,
+[Xiaoqiang Liu](https://scholar.google.com/citations?user=tgL99eQAAAAJ)<sup>3†</sup>,
+[Liang An](https://scholar.google.com/citations?user=s0T1w0gAAAAJ)<sup>4</sup>,
+[Hongwen Zhang](https://scholar.google.com/citations?user=6z0m_ZMAAAAJ)<sup>5</sup>,
+[Wei Min](https://openreview.net/profile?id=~Wei_MIN3)<sup>6</sup>,
+[Guoxin Zhang](https://openreview.net/profile?id=~Guoxin_Zhang1)<sup>3</sup>,
+[Pengfei Wan](https://openreview.net/profile?id=~Pengfei_Wan1)<sup>3</sup>,
+[Yebin Liu](https://scholar.google.com/citations?user=ogXIdlYAAAAJ)<sup>2</sup>,
+[Qingyao Wu](https://scholar.google.com/citations?user=n6e_2IgAAAAJ)<sup>1‡</sup>
+
+<sup>1</sup> South China University of Technology · <sup>2</sup> Tsinghua University · <sup>3</sup> KlingAI Research · <sup>4</sup> Nanjing University · <sup>5</sup> Beijing Normal University · <sup>6</sup> Shadow AI
+
+<sup>&#42;</sup> Work done during an internship at KlingAI Research · <sup>†</sup> Project leader · <sup>‡</sup> Corresponding author: [qyw@scut.edu.cn](mailto:qyw@scut.edu.cn)
+
+![Gnomon4D predicts video, GeoDelta and actions, is pretrained on human and robot video, and leads on simulation benchmarks and real-world manipulation.](assets/fig/teaser.jpg)
 
 Gnomon4D jointly predicts future video, explicit 4D motion (GeoDelta), and robot actions. Interaction-Salient Attention (InSAttn) and Transition-Anchored Aggregation (TransAgg) use the predicted motion to determine where and when the action expert should focus.
 
