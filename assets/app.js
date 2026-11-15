@@ -420,7 +420,7 @@ $$(".enrich").forEach(box => {
     c.appendChild(el("p", "verdict", verdict));
     box.appendChild(c);
   });
-  box.appendChild(el("p", "note", "Attention mass on a region divided by its area fraction, averaged over 50 event windows; dashed line = uniform (1×). Fast-WAM is measured on the observed frame because its action does not read the future."));
+  box.appendChild(el("p", "note", "Attention mass on a region divided by its area fraction, averaged over 50 event windows; dashed line = uniform (1×). Fast-WAM is measured on the observed frame because its action reads no world predictions at inference."));
   $("p.note", box).style.gridColumn = "1 / -1";
   animOnce(box, () => $$(".fill", box).forEach(f => f.style.width = f.dataset.w + "%"));
 });
@@ -577,7 +577,7 @@ steps[0].classList.add("on");
     head.setAttribute("x1", X(n)); head.setAttribute("x2", X(n));
     dot.setAttribute("cx", X(n)); dot.setAttribute("cy", Y(c[n]));
     const hi = c[n] > 0.5;
-    st.textContent = hi ? `c = ${c[n].toFixed(2)} · moving apart · read here` : `c = ${c[n].toFixed(2)} · moving together`;
+    st.textContent = hi ? `c = ${c[n].toFixed(2)} · relative motion` : `c = ${c[n].toFixed(2)} · moving together`;
     st.classList.toggle("hi", hi);
   })();
   svg.addEventListener("click", e => { const b = svg.getBoundingClientRect(); if (vid.getAttribute("src")) vid.currentTime = (e.clientX - b.left) / b.width * N / fps; });
