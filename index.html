@@ -323,6 +323,66 @@
     </div>
   </div>
 
+  <div class="blk sub-blk" id="m3-curri">
+    <div class="blk-head"><span class="blk-n">2.3</span><h3>Reliability-graded <i>training curriculum.</i></h3></div>
+    <p class="blk-lede">Separate MoT expert weights route supervision to the Video, GeoDelta, and Action experts according to label reliability—learning physical dynamics from all human video, adding surface GeoDelta only on hand-visible clips, and anchoring actions in robot demonstrations.</p>
+    <table class="t">
+      <tr>
+        <th>Stage &amp; data tier</th>
+        <th>Scale</th>
+        <th style="text-align:left">Supervision &amp; reliability gating</th>
+        <th style="text-align:center">Video (V)</th>
+        <th style="text-align:center">GeoDelta (G)</th>
+        <th style="text-align:center">Action (A)</th>
+      </tr>
+      <tr>
+        <td>Pretraining · occluded hands</td>
+        <td>4,716 h</td>
+        <td style="text-align:left">Hands visible in &lt;51% of frames; monocular MANO unreliable, so clips train Video dynamics only.</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">–</td>
+        <td style="text-align:center">–</td>
+      </tr>
+      <tr class="ours">
+        <td>Pretraining · visible hands</td>
+        <td>2,859 h</td>
+        <td style="text-align:left">Hands visible in ≥51% of frames; camera-compensated WiLoR+MANO meshes render surface GeoDelta.</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">–</td>
+      </tr>
+      <tr>
+        <td>Mid-training · Robot-30H</td>
+        <td>34.1 h</td>
+        <td style="text-align:left">Dual-arm real-robot teleoperation; introduces Action expert and anchors embodiment–object GeoDelta to controls.</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">✓</td>
+      </tr>
+      <tr>
+        <td>Post-training · target benchmarks</td>
+        <td>Sim / Real</td>
+        <td style="text-align:left">Joint fine-tuning of all three experts per benchmark for single-policy closed-loop control.</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">✓</td>
+        <td style="text-align:center">✓</td>
+      </tr>
+    </table>
+    <div class="cols2" style="margin-top:18px;gap:20px">
+      <div class="card">
+        <p class="tag">Conventional human-video pipelines · MANO as action</p>
+        <h4>Retargeting bottleneck &amp; pose jitter in action space</h4>
+        <p>Mapping 21-keypoint / 22-DoF human hand poses to morphology-specific grippers or dexterous hands is complex and lossy, and monocular occlusion or pose jitter directly corrupts action supervision.</p>
+      </div>
+      <div class="card">
+        <p class="tag">Gnomon4D · MANO as surface-motion intermediary</p>
+        <h4>No joint retargeting &amp; automatic reliability gating</h4>
+        <p>MANO meshes are used solely to render pixel-aligned surface GeoDelta (Δu, Δv, Δd) shared with parallel grippers and dual arms, keeping pose error out of the Action space while routing 4,716 h of occluded clips back to Video-only training.</p>
+      </div>
+    </div>
+    <p class="note">Curriculum ablation on 10 interaction-intensive RoboTwin 2.0 tasks (Section 3.5): no pretraining 86.2% → + EgoManip-5000H 88.3% (+2.1) → + Robot-30H 91.0% (+4.8).</p>
+  </div>
+
   <div class="blk sub-blk" id="m3-data">
     <div class="blk-head"><span class="blk-n">2.3</span><h3>How EgoManip-5000H <i>is built.</i></h3></div>
     <div class="cols2">
